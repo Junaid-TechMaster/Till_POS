@@ -1,5 +1,6 @@
 import { formatDateTime, formatGbp, interpretTenderPence, VAT_RATES, type VatRate } from "@tillpro/shared";
 import { useEffect, useState } from "react";
+import { openCatalogue } from "../catalogueNav";
 import { useTillStore } from "../store/useTillStore";
 import { Modal } from "./Modal";
 import { ReceiptView } from "./ReceiptView";
@@ -132,7 +133,8 @@ function ExtrasDialog() {
     { label: "Void line", run: requestVoidLine },
     { label: "Void basket", run: requestVoidBasket },
     { label: "Price override", run: requestPriceOverride },
-    { label: "Catalogue", run: () => setScreen("products") },
+    { label: "Catalogue", run: () => openCatalogue("products") },
+    { label: "Edit categories", run: () => openCatalogue("categories") },
     { label: "Stock", run: () => setScreen("stock") },
     { label: "Staff", run: () => setScreen("staff") },
     { label: "Settings", run: () => setScreen("settings") },
@@ -417,7 +419,7 @@ function HelpDialog() {
     <Modal title="Keyboard" onClose={close}>
       <ul className="help-list">
         <li>Number keys and the numpad type into the entry row.</li>
-        <li>Enter looks up a barcode or PLU. Esc or Delete clears it.</li>
+        <li>Enter looks up a barcode or PLU. Clear, Esc, or Delete removes the basket items.</li>
         <li>Backspace deletes the last digit. Type a quantity, then tap a product.</li>
         <li>F1 Cash, F2 Card, F3 Customer, F4 Price Check, F5 Reports, F6 Print Last.</li>
         <li>Up and Down move through the basket.</li>

@@ -6,7 +6,7 @@ import { useTillStore } from "../store/useTillStore";
 export function LoginScreen() {
   const login = useTillStore((state) => state.login);
   const loginAdmin = useTillStore((state) => state.loginAdmin);
-  const [mode, setMode] = useState<"admin" | "cashier">("admin");
+  const [mode, setMode] = useState<"admin" | "cashier">("cashier");
   const [username, setUsername] = useState(DEMO_ADMIN_USERNAME);
   const [password, setPassword] = useState("");
   const [stage, setStage] = useState<"id" | "pin">("id");
@@ -53,7 +53,7 @@ export function LoginScreen() {
   async function submitCashier() {
     if (stage === "id") {
       if (!staffId) {
-        setError("Enter a staff ID");
+        setError("Enter a cashier ID");
         return;
       }
       setStage("pin");
@@ -75,7 +75,7 @@ export function LoginScreen() {
     <div className="login-screen" data-testid="login-screen">
       <div className="login-copy">
         <h1>{PRODUCT_NAME}</h1>
-        <p className="text-xl">The shop account from the dashboard is the admin. The admin creates one cashier.</p>
+        <p className="text-xl">Sign in through ID. Enter the cashier ID, then the PIN. Admin is the shop account from the dashboard.</p>
         <div className="flex gap-2">
           <button type="button" className={`tp-btn ${mode === "admin" ? "tone-green" : "tone-teal"}`} onClick={() => { setMode("admin"); setError(""); }}>
             Admin
@@ -107,8 +107,8 @@ export function LoginScreen() {
       ) : (
         <div className="login-pad">
           <div className="login-display" data-testid="login-display">
-            <span>{stage === "id" ? "Staff ID" : "PIN"}</span>
-            <span>{stage === "pin" ? "•".repeat(buffer.length) : buffer || "—"}</span>
+            <span>{stage === "id" ? "Sign in through ID" : "PIN"}</span>
+            <span className={buffer ? undefined : "login-placeholder"}>{stage === "pin" ? "•".repeat(buffer.length) : buffer || "Cashier ID"}</span>
           </div>
           {error ? <div className="flash flash-bad">{error}</div> : null}
           <div className="pin-grid">

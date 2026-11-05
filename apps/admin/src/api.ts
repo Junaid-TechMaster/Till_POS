@@ -1,7 +1,10 @@
 const TOKEN_KEY = "tillpro.admin";
 
 export function apiBase(): string {
-  return (import.meta.env.VITE_API_URL as string | undefined)?.replace(/\/$/, "") || "http://127.0.0.1:8787";
+  const configured = import.meta.env.VITE_API_URL as string | undefined;
+  if (configured) return configured.replace(/\/$/, "");
+  if (import.meta.env.PROD) return "";
+  return "http://127.0.0.1:8787";
 }
 
 export function getToken(): string {

@@ -7,6 +7,7 @@ import { hashPassword, verifyPassword } from "./passwords.js";
 import { addDays, readSettings, writeSettings, type ShopLicenceSettings } from "./settings.js";
 import { signAdmin, verifyAdmin, type AdminToken } from "./tokens.js";
 import {
+  accountsForLogin,
   audit,
   clientInclude,
   createClient,
@@ -98,8 +99,8 @@ function welcome(input: {
     `Password: ${input.password}`,
     `Download: ${input.downloadUrl || "(add the download link in Settings)"}`,
     "",
-    "Sign in with this username and password the first time the till starts.",
-    "After that, shop staff sign in with their own ID and PIN.",
+    "Each time the till opens, sign in with this email and password, then the cashier ID.",
+    "The shop username also works in place of the email.",
     "Keep this password private. It works only for this shop and the devices you allow.",
   ].join("\n");
 }
@@ -493,21 +494,24 @@ export async function registerRoutes(app: import("fastify").FastifyInstance): Pr
   app.post("/license/activate", loginLimit, async (request, reply) => {
     const body = z
       .object({
-        username: z.string().min(1).max(80),
+        username: z.string().min(1).max(200),
         password: z.string().min(1).max(200),
         deviceId: z.string().min(16).max(128),
         deviceName: z.string().min(1).max(120),
         appVersion: z.string().max(40),
       })
       .safeParse(request.body);
-    if (!body.success) return reply.code(400).send({ error: "Enter the shop username and password." });
+    if (!body.success) return reply.code(400).send({ error: "Enter the client email and password." });
     await refreshStatuses();
-    const account = await prisma.clientAccount.findUnique({
-      where: { username: body.data.username },
-      include: { client: { include: clientInclude } },
-    });
-    const valid = account ? await verifyPassword(account.passwordHash, body.data.password) : false;
-    if (!account || !valid) return reply.code(401).send({ error: "Sign-in failed." });
+    const candidates = await accountsForLogin(body.data.username);
+    let account: (typeof candidates)[number] | null = null;
+    for (const candidate of candidates) {
+      if (await verifyPassword(candidate.passwordHash, body.data.password)) {
+        account = candidate;
+        break;
+      }
+    }
+    if (!account) return reply.code(401).send({ error: "Sign-in failed." });
     const client = account.client;
     const subscription = client.subscription;
     if (!subscription) return reply.code(403).send({ error: "Subscription inactive. Please contact your provider to restore access." });
@@ -543,7 +547,7 @@ export async function registerRoutes(app: import("fastify").FastifyInstance): Pr
     });
     const token = await issueForDevice(client, { deviceId: body.data.deviceId, blocked: false });
     await audit("license", "device.activate", body.data.deviceId, client.id);
-    return { token };
+    return { token, username: account.username };
   });
 
   app.post("/license/check", async (request, reply) => {

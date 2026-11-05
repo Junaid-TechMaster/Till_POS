@@ -214,18 +214,42 @@ export async function licenceState(force = false): Promise<LicenceState> {
 }
 
 export async function activateLicence(username: string, password: string): Promise<LicenceState> {
-  const response = await fetch(`${apiBaseUrl()}/license/activate`, {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({
-      username,
-      password,
-      deviceId: deviceFingerprint(),
-      deviceName: hostname(),
-      appVersion: APP_VERSION,
-    }),
-  });
-  const body = (await response.json()) as { token?: string; error?: string };
+  let response: Response;
+  try {
+    response = await fetch(`${apiBaseUrl()}/license/activate`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        username,
+        password,
+        deviceId: deviceFingerprint(),
+        deviceName: hostname(),
+        appVersion: APP_VERSION,
+      }),
+    });
+  } catch {
+    return remember({
+      activated: false,
+      status: "UNACTIVATED",
+      locked: true,
+      label: "Not activated",
+      banner: null,
+      lockMessage: "Could not reach the server.",
+    });
+  }
+  let body: { token?: string; error?: string; username?: string } = {};
+  try {
+    body = (await response.json()) as { token?: string; error?: string; username?: string };
+  } catch {
+    return remember({
+      activated: false,
+      status: "UNACTIVATED",
+      locked: true,
+      label: "Not activated",
+      banner: null,
+      lockMessage: "Could not reach the server.",
+    });
+  }
   if (!response.ok || !body.token) {
     return remember({
       activated: false,
@@ -238,7 +262,7 @@ export async function activateLicence(username: string, password: string): Promi
   }
   lastNetworkAttempt = Date.now();
   const state = await acceptToken(body.token, readStored());
-  if (state.activated) setShopAdmin(username, password);
+  if (state.activated) setShopAdmin(body.username || username, password);
   return remember(state);
 }
 

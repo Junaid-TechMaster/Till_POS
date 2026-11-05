@@ -65,6 +65,28 @@ async function nextClientCode(): Promise<string> {
   return `TP-${String(issued).padStart(6, "0")}`;
 }
 
+export async function accountsForLogin(login: string) {
+  const name = login.trim();
+  const exact = await prisma.clientAccount.findUnique({
+    where: { username: name },
+    include: { client: { include: clientInclude } },
+  });
+  const byEmail = name.includes("@")
+    ? await prisma.clientAccount.findMany({
+        where: { client: { email: { equals: name, mode: "insensitive" } } },
+        include: { client: { include: clientInclude } },
+      })
+    : [];
+  const seen = new Set<string>();
+  const accounts = [];
+  for (const account of [exact, ...byEmail]) {
+    if (!account || seen.has(account.id)) continue;
+    seen.add(account.id);
+    accounts.push(account);
+  }
+  return accounts;
+}
+
 export async function createClient(input: {
   businessName: string;
   contactName: string;

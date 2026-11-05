@@ -1,5 +1,6 @@
 import { VAT_RATES, formatGbp, type ProductRecord, type VatRate } from "@tillpro/shared";
 import { useState } from "react";
+import { takeCatalogueTab, type CatalogueTab } from "../catalogueNav";
 import { StockEditor } from "./StockScreen";
 import { useTillStore } from "../store/useTillStore";
 
@@ -21,7 +22,7 @@ const empty = (): ProductRecord => ({
   active: true,
 });
 
-type Tab = "products" | "categories" | "stock";
+type Tab = CatalogueTab;
 
 export function ProductsScreen() {
   const products = useTillStore((state) => state.products);
@@ -30,7 +31,7 @@ export function ProductsScreen() {
   const saveProduct = useTillStore((state) => state.saveProductRecord);
   const removeProduct = useTillStore((state) => state.removeProduct);
   const saveCategory = useTillStore((state) => state.saveCategoryRecord);
-  const [tab, setTab] = useState<Tab>("products");
+  const [tab, setTab] = useState<Tab>(takeCatalogueTab);
   const [query, setQuery] = useState("");
   const [draft, setDraft] = useState<ProductRecord | null>(null);
   const [categoryName, setCategoryName] = useState("");
@@ -63,29 +64,7 @@ export function ProductsScreen() {
       {tab === "stock" ? <StockEditor /> : null}
 
       {tab === "categories" ? (
-        <div className="grid min-h-0 flex-1 grid-cols-2 gap-2">
-          <div className="min-h-0 overflow-auto rounded bg-white">
-            {categories.map((category) => (
-              <button
-                key={category.id}
-                type="button"
-                className="flex w-full items-center gap-3 border-b border-[#e1e7e9] px-3 py-3 text-left"
-                onClick={() => {
-                  setEditingCategoryId(category.id);
-                  setCategoryName(category.name);
-                  setCategoryColor(category.color);
-                  setCategoryImage(category.image ?? null);
-                }}
-              >
-                {category.image ? (
-                  <img src={category.image} alt="" className="h-10 w-10 shrink-0 rounded object-cover" />
-                ) : (
-                  <span className="h-8 w-8 shrink-0 rounded" style={{ background: category.color }} />
-                )}
-                <span className="font-extrabold text-[var(--tp-ink)]">{category.name}</span>
-              </button>
-            ))}
-          </div>
+        <div className="flex min-h-0 flex-1 flex-col gap-2 overflow-auto">
           <form
             className="flex flex-col gap-2 rounded bg-white p-3 text-[var(--tp-ink)]"
             onSubmit={(event) => {
@@ -109,7 +88,7 @@ export function ProductsScreen() {
             <h2 className="text-xl font-extrabold">{editingCategoryId ? "Edit category" : "Add a category"}</h2>
             <label className="field">
               Name
-              <input data-osk="true" value={categoryName} onChange={(event) => setCategoryName(event.target.value)} required />
+              <input data-osk="true" value={categoryName} onChange={(event) => setCategoryName(event.target.value)} required placeholder="Category name" />
             </label>
             <label className="field">
               Image
@@ -150,8 +129,30 @@ export function ProductsScreen() {
                 </button>
               ) : null}
             </div>
-            <p>Tap a category to change its name or colour. New categories appear on the sale screen.</p>
+            <p>Tap a category below. Its name appears in the Name box so you can change it.</p>
           </form>
+          <div className="min-h-0 overflow-auto rounded bg-white">
+            {categories.map((category) => (
+              <button
+                key={category.id}
+                type="button"
+                className="flex w-full items-center gap-3 border-b border-[#e1e7e9] px-3 py-3 text-left"
+                onClick={() => {
+                  setEditingCategoryId(category.id);
+                  setCategoryName(category.name);
+                  setCategoryColor(category.color);
+                  setCategoryImage(category.image ?? null);
+                }}
+              >
+                {category.image ? (
+                  <img src={category.image} alt="" className="h-10 w-10 shrink-0 rounded object-cover" />
+                ) : (
+                  <span className="h-8 w-8 shrink-0 rounded" style={{ background: category.color }} />
+                )}
+                <span className="font-extrabold text-[var(--tp-ink)]">{category.name}</span>
+              </button>
+            ))}
+          </div>
         </div>
       ) : null}
 

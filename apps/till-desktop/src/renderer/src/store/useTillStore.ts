@@ -173,9 +173,21 @@ export const useTillStore = create<TillState>((set, get) => ({
       return;
     }
     if (state.dialog) return;
-    const selected = state.lines.some((line) => line.id === state.selectedLineId);
+    if (state.lines.length > 0) {
+      const descriptions = state.lines.map((line) => line.description).join(", ");
+      set({
+        ...withTotals([], state.basketDiscountPct, state.noVat),
+        selectedLineId: null,
+        buffer: "",
+        tenders: [],
+        paidPence: 0,
+        changePence: 0,
+      });
+      pushAudit("void_basket", descriptions);
+      get().flash("Basket cleared", "good");
+      return;
+    }
     set({ buffer: "" });
-    if (selected) state.requestVoidLine();
   },
 
   enter: () => {
@@ -828,7 +840,7 @@ function voidSelectedLine() {
   const lines = state.lines.filter((item) => item.id !== line.id);
   useTillStore.setState({
     ...withTotals(lines, state.basketDiscountPct, state.noVat),
-    selectedLineId: lines[0]?.id ?? null,
+    selectedLineId: null,
     dialog: null,
   });
   pushAudit("void_line", line.description);

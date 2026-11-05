@@ -25,6 +25,7 @@ export function App() {
   const screen = useTillStore((state) => state.screen);
   const banner = useTillStore((state) => state.licenceBanner);
   const [gate, setGate] = useState<Gate | null>(window.till ? null : { activated: true, locked: false, label: "", banner: null, lockMessage: null });
+  const [shopReady, setShopReady] = useState(!window.till);
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
 
@@ -79,30 +80,31 @@ export function App() {
   async function activate(event: FormEvent) {
     event.preventDefault();
     if (!window.till) return;
-    const next = await window.till.activateLicence(username, password);
+    const next = await window.till.activateLicence(username.trim(), password);
     setGate(next);
     useTillStore.setState({ licenceLabel: next.label, licenceBanner: next.banner });
+    if (next.activated && !next.locked) setShopReady(true);
     setPassword("");
   }
 
-  const locked = Boolean(window.till && (!gate || !gate.activated || gate.locked));
+  const pastShop = !window.till || shopReady;
+  const locked = Boolean(window.till && shopReady && (!gate || !gate.activated || gate.locked));
 
   return (
     <div className="app-frame">
       <TitleBar />
       {banner ? <div className="grace-banner">{banner}</div> : null}
-      {window.till && !gate ? <section className="lock-screen"><h1>Checking subscription…</h1></section> : null}
-      {gate && !gate.activated ? (
+      {window.till && !shopReady ? (
         <form className="lock-screen" onSubmit={(event) => void activate(event)}>
-          <h1>Activate this till</h1>
-          <p>Enter the shop username and password from your provider. There is no public sign-up.</p>
-          <input data-osk="true" value={username} onChange={(event) => setUsername(event.target.value)} placeholder="Username" autoComplete="username" />
+          <h1>Sign in</h1>
+          <p>Enter the client email and password from the dashboard. This is asked every time the till opens.</p>
+          <input data-osk="true" value={username} onChange={(event) => setUsername(event.target.value)} placeholder="Email" autoComplete="username" />
           <input data-osk="true" type="password" value={password} onChange={(event) => setPassword(event.target.value)} placeholder="Password" autoComplete="current-password" />
-          {gate.lockMessage ? <p className="lock-error">{gate.lockMessage}</p> : null}
+          {gate?.lockMessage ? <p className="lock-error">{gate.lockMessage}</p> : null}
           <button type="submit" className="key-btn enter">Sign in</button>
         </form>
       ) : null}
-      {gate?.activated && gate.locked ? (
+      {shopReady && gate?.activated && gate.locked ? (
         <section className="lock-screen">
           <h1>{gate.lockMessage}</h1>
           <button type="button" className="key-btn" onClick={() => void window.till?.licenceRefresh().then((next) => {
@@ -111,15 +113,15 @@ export function App() {
           })}>Check again</button>
         </section>
       ) : null}
-      {!locked && !staff ? <LoginScreen /> : null}
-      {!locked && staff && screen === "sale" ? <SaleScreen /> : null}
-      {!locked && staff && screen === "transactions" ? <TransactionsScreen /> : null}
-      {!locked && staff && screen === "reports" ? <ReportsScreen /> : null}
-      {!locked && staff && screen === "products" ? <ProductsScreen /> : null}
-      {!locked && staff && screen === "settings" ? <SettingsScreen /> : null}
-      {!locked && staff && screen === "staff" ? <StaffScreen /> : null}
-      {!locked && staff && screen === "stock" ? <StockScreen /> : null}
-      {!locked && staff && screen === "cashup" ? <CashUpScreen /> : null}
+      {pastShop && !locked && !staff ? <LoginScreen /> : null}
+      {pastShop && !locked && staff && screen === "sale" ? <SaleScreen /> : null}
+      {pastShop && !locked && staff && screen === "transactions" ? <TransactionsScreen /> : null}
+      {pastShop && !locked && staff && screen === "reports" ? <ReportsScreen /> : null}
+      {pastShop && !locked && staff && screen === "products" ? <ProductsScreen /> : null}
+      {pastShop && !locked && staff && screen === "settings" ? <SettingsScreen /> : null}
+      {pastShop && !locked && staff && screen === "staff" ? <StaffScreen /> : null}
+      {pastShop && !locked && staff && screen === "stock" ? <StockScreen /> : null}
+      {pastShop && !locked && staff && screen === "cashup" ? <CashUpScreen /> : null}
       <OnScreenKeyboard />
     </div>
   );

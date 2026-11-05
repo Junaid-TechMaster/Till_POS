@@ -1,0 +1,15 @@
+node_modules
+.git
+dist
+out
+release
+apps/api/data
+apps/api/keys
+.env
+.env.*
+!.env.example
+*.pem
+!apps/till-desktop/resources/license-public.pem
+coverage
+*.log
+*.tsbuildinfo
