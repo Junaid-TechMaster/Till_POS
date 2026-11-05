@@ -1,0 +1,105 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+/// Dashboard operator. Passwords are argon2 hashes. totpSecret is reserved for optional 2FA.
+model AdminUser {
+  id           String   @id @default(cuid())
+  email        String   @unique
+  passwordHash String
+  role         String
+  totpSecret   String?
+  createdAt    DateTime @default(now())
+}
+
+/// One shop. clientCode and the linked username are never reused.
+model Client {
+  id                String         @id @default(cuid())
+  clientCode        String         @unique
+  businessName      String
+  contactName       String
+  email             String
+  phone             String
+  address           String
+  notes             String         @default("")
+  status            String
+  monthlyPricePence Int
+  currency          String         @default("GBP")
+  createdAt         DateTime       @default(now())
+  account           ClientAccount?
+  subscription      Subscription?
+  payments          Payment[]
+  devices           Device[]
+  auditLogs         AuditLog[]
+}
+
+model ClientAccount {
+  id           String   @id @default(cuid())
+  username     String   @unique
+  passwordHash String
+  clientId     String   @unique
+  client       Client   @relation(fields: [clientId], references: [id])
+  createdAt    DateTime @default(now())
+}
+
+model Subscription {
+  id               String    @id @default(cuid())
+  clientId         String    @unique
+  client           Client    @relation(fields: [clientId], references: [id])
+  plan             String    @default("monthly")
+  status           String
+  trialEndsAt      DateTime
+  currentPeriodEnd DateTime
+  graceEndsAt      DateTime
+  maxDevices       Int       @default(1)
+  lastPaidAt       DateTime?
+}
+
+model Payment {
+  id          String   @id @default(cuid())
+  clientId    String
+  client      Client   @relation(fields: [clientId], references: [id])
+  amountPence Int
+  method      String
+  reference   String   @default("")
+  paidAt      DateTime
+  periodStart DateTime
+  periodEnd   DateTime
+  recordedBy  String
+  createdAt   DateTime @default(now())
+}
+
+model Device {
+  id          String   @id @default(cuid())
+  clientId    String
+  client      Client   @relation(fields: [clientId], references: [id])
+  deviceId    String
+  name        String
+  firstSeenAt DateTime @default(now())
+  lastSeenAt  DateTime @default(now())
+  lastIp      String   @default("")
+  appVersion  String   @default("")
+  status      String   @default("ACTIVE")
+
+  @@unique([clientId, deviceId])
+}
+
+model AuditLog {
+  id        String   @id @default(cuid())
+  clientId  String?
+  client    Client?  @relation(fields: [clientId], references: [id])
+  actorId   String
+  action    String
+  detail    String
+  createdAt DateTime @default(now())
+}
+
+model Setting {
+  key   String @id
+  value String
+}

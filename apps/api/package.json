@@ -1,0 +1,31 @@
+{
+  "name": "@tillpro/api",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "tsx scripts/dev.ts",
+    "build": "tsc -p tsconfig.json",
+    "start": "node dist/index.js",
+    "prisma:generate": "prisma generate",
+    "prisma:migrate": "prisma migrate deploy",
+    "seed": "tsx prisma/seed.ts"
+  },
+  "dependencies": {
+    "@fastify/cors": "^11.1.0",
+    "@fastify/helmet": "^13.0.2",
+    "@fastify/rate-limit": "^10.3.0",
+    "@prisma/client": "^6.18.0",
+    "@tillpro/shared": "*",
+    "argon2": "^0.44.0",
+    "embedded-postgres": "^18.6.0-beta.19",
+    "fastify": "^5.6.1",
+    "jose": "^6.1.0",
+    "zod": "^3.25.76"
+  },
+  "devDependencies": {
+    "prisma": "^6.18.0",
+    "tsx": "^4.20.6",
+    "typescript": "~5.9.3"
+  }
+}

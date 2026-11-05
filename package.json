@@ -1,0 +1,24 @@
+{
+  "name": "tillpro",
+  "private": true,
+  "version": "1.0.0",
+  "description": "TillPro retail till, admin dashboard, and subscription licensing",
+  "workspaces": [
+    "apps/*",
+    "packages/*"
+  ],
+  "scripts": {
+    "dev:till": "npm run dev -w @tillpro/till-desktop",
+    "dev:api": "npm run dev -w @tillpro/api",
+    "dev:admin": "npm run dev -w @tillpro/admin",
+    "build:all": "npm run build -w @tillpro/shared && npm run build -w @tillpro/till-desktop && npm run build -w @tillpro/api && npm run build -w @tillpro/admin",
+    "dist:till": "npm run dist -w @tillpro/till-desktop",
+    "test": "npm run test -w @tillpro/shared"
+  },
+  "engines": {
+    "node": ">=20.19.0"
+  },
+  "devDependencies": {
+    "electron": "42.11.18"
+  }
+}

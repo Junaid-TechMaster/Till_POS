@@ -1,0 +1,16 @@
+node_modules
+dist
+out
+release
+.env
+.env.*
+!.env.example
+*.log
+.DS_Store
+apps/api/keys
+apps/api/data
+*.pem
+!apps/till-desktop/resources/license-public.pem
+coverage
+.prisma
+*.tsbuildinfo

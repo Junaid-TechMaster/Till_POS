@@ -1,0 +1,28 @@
+appId: com.tillpro.desktop
+productName: TillPro
+copyright: Copyright © TillPro
+directories:
+  output: release
+  buildResources: build
+files:
+  - out/**/*
+  - package.json
+  - resources/**/*
+asar: true
+asarUnpack:
+  - "**/*.node"
+npmRebuild: false
+win:
+  target:
+    - target: nsis
+      arch:
+        - x64
+  artifactName: ${productName}-Setup-${version}.${ext}
+nsis:
+  oneClick: false
+  perMachine: false
+  allowToChangeInstallationDirectory: true
+  createDesktopShortcut: true
+  createStartMenuShortcut: true
+  shortcutName: TillPro
+  uninstallDisplayName: TillPro
