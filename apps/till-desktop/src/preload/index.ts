@@ -63,6 +63,15 @@ const till = {
       banner: string | null;
       lockMessage: string | null;
     }>,
+  checkUpdate: () =>
+    ipcRenderer.invoke("app:checkUpdate") as Promise<{
+      current: string;
+      latest: string;
+      url: string | null;
+      notes: string;
+      error: string | null;
+    }>,
+  openExternal: (url: string) => ipcRenderer.invoke("app:openExternal", url) as Promise<boolean>,
   activateLicence: (username: string, password: string) =>
     ipcRenderer.invoke("licence:activate", username, password) as Promise<{
       activated: boolean;

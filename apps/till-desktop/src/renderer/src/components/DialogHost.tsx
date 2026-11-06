@@ -141,6 +141,7 @@ function ExtrasDialog() {
     { label: "Settings", run: () => setScreen("settings") },
     { label: "Cash up", run: () => setScreen("cashup") },
     { label: "Day end", run: () => open({ name: "dayEnd" }) },
+    { label: "Check for updates", run: () => setScreen("settings") },
     { label: "Keyboard help", run: () => open({ name: "help" }) },
   ];
 

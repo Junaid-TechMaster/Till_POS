@@ -64,6 +64,14 @@ interface TillBridge {
     banner: string | null;
     lockMessage: string | null;
   }>;
+  checkUpdate: () => Promise<{
+    current: string;
+    latest: string;
+    url: string | null;
+    notes: string;
+    error: string | null;
+  }>;
+  openExternal: (url: string) => Promise<boolean>;
   activateLicence: (username: string, password: string) => Promise<{
     activated: boolean;
     status: string;

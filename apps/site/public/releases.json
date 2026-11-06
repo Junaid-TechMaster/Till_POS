@@ -1,0 +1,19 @@
+{
+  "latest": "1.0.5",
+  "versions": [
+    {
+      "version": "1.0.5",
+      "released": "2026-11-07",
+      "file": "TillPro-Setup-1.0.5.exe",
+      "url": "https://github.com/Junaid-TechMaster/Till_POS/releases/download/v1.0.5/TillPro-Setup-1.0.5.exe",
+      "notes": "Check for updates from Settings. Day end, a separate till for each shop, and manual items."
+    },
+    {
+      "version": "1.0.4",
+      "released": "2026-11-07",
+      "file": "TillPro-Setup-1.0.4.exe",
+      "url": "https://github.com/Junaid-TechMaster/Till_POS/releases/download/v1.0.4/TillPro-Setup-1.0.4.exe",
+      "notes": "First public installer. Each shop has its own blank till, and the admin can reset a forgotten cashier PIN."
+    }
+  ]
+}

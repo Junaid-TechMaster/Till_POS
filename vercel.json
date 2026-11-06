@@ -1,13 +1,14 @@
 {
   "installCommand": "npm install",
-  "buildCommand": "npm run build -w @tillpro/shared && npm run prisma:generate -w @tillpro/api && npm run build -w @tillpro/api && npm run build -w @tillpro/admin",
-  "outputDirectory": "apps/admin/dist",
+  "buildCommand": "npm run build -w @tillpro/shared && npm run prisma:generate -w @tillpro/api && npm run build -w @tillpro/api && npm run build -w @tillpro/admin && npm run build -w @tillpro/site && node scripts/assemble-web.mjs",
+  "outputDirectory": "apps/site/dist",
   "framework": null,
   "rewrites": [
     { "source": "/health", "destination": "/api" },
     { "source": "/admin/:path*", "destination": "/api" },
     { "source": "/license/:path*", "destination": "/api" },
     { "source": "/sync/:path*", "destination": "/api" },
-    { "source": "/((?!assets/).*)", "destination": "/index.html" }
+    { "source": "/dashboard", "destination": "/dashboard/index.html" },
+    { "source": "/((?!assets/|dashboard/|screenshots/|releases.json).*)", "destination": "/index.html" }
   ]
 }

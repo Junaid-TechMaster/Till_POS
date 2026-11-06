@@ -305,6 +305,31 @@ export async function sendDayEnd(report: {
   return { ok: true, email: body.email };
 }
 
+export async function checkForUpdate(): Promise<{
+  current: string;
+  latest: string;
+  url: string | null;
+  notes: string;
+  error: string | null;
+}> {
+  const current = APP_VERSION;
+  try {
+    const response = await fetch(`${apiBaseUrl()}/releases.json`);
+    if (!response.ok) {
+      return { current, latest: current, url: null, notes: "", error: "Could not reach the update list." };
+    }
+    const body = (await response.json()) as {
+      latest?: string;
+      versions?: { version: string; url: string; notes?: string }[];
+    };
+    const latest = body.latest || current;
+    const match = body.versions?.find((item) => item.version === latest);
+    return { current, latest, url: match?.url ?? null, notes: match?.notes ?? "", error: null };
+  } catch {
+    return { current, latest: current, url: null, notes: "", error: "Could not reach the update list." };
+  }
+}
+
 export function assertSalesAllowed(): void {
   if (!cached?.activated || cached.locked) {
     throw new Error(cached?.lockMessage || "Subscription inactive. Please contact your provider to restore access.");
