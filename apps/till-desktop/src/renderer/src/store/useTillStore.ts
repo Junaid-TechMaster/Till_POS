@@ -72,7 +72,7 @@ interface TillState {
   closeDialog: () => void;
   attachCustomer: (customer: CustomerRecord | null) => void;
   saveCustomer: (customer: CustomerRecord) => void;
-  addManual: (description: string, pricePence: number, vatRate: 0 | 5 | 20) => void;
+  addManual: (description: string, pricePence: number, vatRate: 0 | 5 | 20, qty?: number) => void;
   applyLineDiscount: (pct: number) => void;
   applyBasketDiscount: (pct: number) => void;
   requestVoidLine: () => void;
@@ -351,8 +351,8 @@ export const useTillStore = create<TillState>((set, get) => ({
     });
   },
 
-  addManual: (description, pricePence, vatRate) => {
-    if (!description.trim() || pricePence <= 0) {
+  addManual: (description, pricePence, vatRate, qty = 1) => {
+    if (!description.trim() || pricePence <= 0 || qty < 1) {
       get().flash("Enter a description and a price", "bad");
       return;
     }
@@ -360,7 +360,7 @@ export const useTillStore = create<TillState>((set, get) => ({
       id: nextLineId(),
       productId: null,
       description: description.trim(),
-      qty: 1,
+      qty,
       unitPricePence: pricePence,
       discountPct: 0,
       vatRate,
@@ -648,6 +648,9 @@ export const useTillStore = create<TillState>((set, get) => ({
       paidPence: open?.paidPence ?? 0,
       buffer: open?.buffer ?? "",
       selectedLineId: open?.selectedLineId ?? null,
+      categoryId: null,
+      screen: "sale",
+      dialog: null,
       staff: null,
     });
   },

@@ -33,8 +33,8 @@ import {
   nextSlipValue,
   getDb,
 } from "./db";
-import { assertSalesAllowed } from "./licence";
-import { closeZ, listReportMeta, runReport } from "./reports";
+import { assertSalesAllowed, sendDayEnd } from "./licence";
+import { buildDayEnd, closeZ, listReportMeta, runReport } from "./reports";
 
 export interface Bootstrap {
   products: ProductRecord[];
@@ -160,6 +160,17 @@ export function registerDatabaseIpc(): void {
   ipcMain.handle("db:closeZ", (_event, staffId: string, blind: boolean) => {
     assertSalesAllowed();
     return closeZ(staffId, blind);
+  });
+
+  ipcMain.handle("db:dayEnd", async (_event, staffId: string) => {
+    assertSalesAllowed();
+    const built = buildDayEnd(staffId);
+    if (!built.ok) return built;
+    const sent = await sendDayEnd(built.report);
+    if (!sent.ok) return sent;
+    const closed = closeZ(staffId, false);
+    if (!closed.ok) return { ok: true as const, email: sent.email, zNumber: null, warning: closed.error };
+    return { ok: true as const, email: sent.email, zNumber: closed.zNumber };
   });
 
   ipcMain.handle("db:expectedCash", () => expectedCashPence(true));

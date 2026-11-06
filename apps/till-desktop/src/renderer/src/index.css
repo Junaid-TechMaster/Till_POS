@@ -365,6 +365,12 @@ table.lines tr.selected td { background: var(--tp-selected); box-shadow: inset 4
 }
 
 .cat-grid { grid-template-rows: repeat(4, minmax(56px, 1fr)); }
+.empty-catalogue {
+  margin: 12px;
+  color: white;
+  font-size: 22px;
+  font-weight: 700;
+}
 .prod-grid { grid-auto-rows: minmax(72px, 1fr); align-content: stretch; }
 
 .tile {

@@ -1,4 +1,5 @@
-import { importPKCS8, jwtVerify, SignJWT } from "jose";
+import { createPublicKey } from "node:crypto";
+import { importPKCS8, importSPKI, jwtVerify, SignJWT } from "jose";
 import type { LicenceStatus } from "@tillpro/shared";
 import { env } from "./env.js";
 
@@ -39,6 +40,18 @@ export async function verifyAdmin(token: string): Promise<AdminToken> {
   const { payload } = await jwtVerify(token, adminKey, { algorithms: ["HS256"] });
   const role = payload.role === "Support" ? "Support" : "SuperAdmin";
   return { sub: String(payload.sub), email: String(payload.email ?? ""), role };
+}
+
+export async function verifyLicence(token: string): Promise<{ clientCode: string; deviceId: string } | null> {
+  try {
+    const pem = createPublicKey(env.licencePrivateKey).export({ type: "spki", format: "pem" });
+    const key = await importSPKI(pem.toString(), "RS256");
+    const { payload } = await jwtVerify(token, key, { algorithms: ["RS256"] });
+    if (typeof payload.sub !== "string" || typeof payload.deviceId !== "string") return null;
+    return { clientCode: payload.sub, deviceId: payload.deviceId };
+  } catch {
+    return null;
+  }
 }
 
 export async function signLicence(input: LicenceTokenInput): Promise<string> {

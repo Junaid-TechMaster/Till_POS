@@ -14,7 +14,8 @@ export function CategoryGrid() {
   if (!category) {
     return (
       <div className="cat-wrap">
-        <div className="cat-grid" data-testid="category-grid" aria-label="Categories">
+        {categories.length === 0 ? <p className="empty-catalogue">No categories yet. Add them in Extras.</p> : null}
+        {categories.length > 0 ? <div className="cat-grid" data-testid="category-grid" aria-label="Categories">
           {categories.map((item) => (
             <button
               key={item.id}
@@ -31,7 +32,7 @@ export function CategoryGrid() {
               </span>
             </button>
           ))}
-        </div>
+        </div> : null}
       </div>
     );
   }

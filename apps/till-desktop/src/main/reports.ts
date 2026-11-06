@@ -575,6 +575,98 @@ export function runReport(id: string, range: Range): ReportResult {
   };
 }
 
+export interface DayEndReport {
+  shopName: string;
+  openedAt: string;
+  closedAt: string;
+  closedBy: string;
+  takings: string;
+  saleCount: number;
+  refundCount: number;
+  slips: {
+    slip: number;
+    when: string;
+    staff: string;
+    kind: string;
+    amount: string;
+    payment: string;
+    lines: { description: string; qty: number; amount: string }[];
+  }[];
+}
+
+export function buildDayEnd(staffId: string): { ok: true; report: DayEndReport } | { ok: false; error: string } {
+  const database = getDb();
+  const staff = database.prepare("SELECT id, name, active FROM staff WHERE id = ?").get(staffId) as { id: string; name: string; active: number } | undefined;
+  if (!staff || staff.active !== 1) return { ok: false, error: "Sign in required." };
+  const shift = database.prepare("SELECT id, opened_at, z_number FROM shifts WHERE closed_at IS NULL ORDER BY id DESC LIMIT 1").get() as
+    | { id: number; opened_at: string; z_number: number | null }
+    | undefined;
+  if (!shift) return { ok: false, error: "No open shift" };
+  if (shift.z_number) return { ok: false, error: "This day is already closed." };
+  const sales = database
+    .prepare("SELECT id, slip_no, created_at, staff_name, kind, total_pence, pay_out_pence, payment_label FROM sales WHERE shift_id = ? ORDER BY slip_no")
+    .all(shift.id) as {
+    id: number;
+    slip_no: number;
+    created_at: string;
+    staff_name: string;
+    kind: string;
+    total_pence: number;
+    pay_out_pence: number;
+    payment_label: string;
+  }[];
+  const lineQuery = database.prepare("SELECT description, qty, amount_pence FROM sale_lines WHERE sale_id = ? ORDER BY id");
+  let takings = 0;
+  let saleCount = 0;
+  let refundCount = 0;
+  for (const sale of sales) {
+    if (sale.kind === "sale") {
+      takings += sale.total_pence;
+      saleCount += 1;
+    } else if (sale.kind === "refund") {
+      takings -= sale.total_pence;
+      refundCount += 1;
+    }
+  }
+  const slips = sales.slice(0, 500).map((sale) => {
+    const amount = sale.kind === "payout" ? sale.pay_out_pence : sale.total_pence;
+    const lines = (lineQuery.all(sale.id) as { description: string; qty: number; amount_pence: number }[]).map((line) => ({
+      description: line.description,
+      qty: Number(line.qty),
+      amount: money(line.amount_pence),
+    }));
+    return {
+      slip: sale.slip_no,
+      when: sale.created_at,
+      staff: sale.staff_name || "",
+      kind: sale.kind,
+      amount: money(amount),
+      payment: sale.payment_label || "",
+      lines,
+    };
+  });
+  const shop = database.prepare("SELECT value FROM settings WHERE key = 'shop'").get() as { value: string } | undefined;
+  let shopName = "";
+  try {
+    shopName = String((JSON.parse(shop?.value || "{}") as { shopName?: string }).shopName || "");
+  } catch {
+    shopName = "";
+  }
+  return {
+    ok: true,
+    report: {
+      shopName,
+      openedAt: shift.opened_at,
+      closedAt: localStamp(),
+      closedBy: staff.name,
+      takings: money(takings),
+      saleCount,
+      refundCount,
+      slips,
+    },
+  };
+}
+
 export function closeZ(staffId: string, blind: boolean): { ok: true; report: ReportResult; zNumber: number } | { ok: false; error: string } {
   const manager = getDb().prepare("SELECT id, name, role, active FROM staff WHERE id = ?").get(staffId) as { id: string; name: string; role: string; active: number } | undefined;
   if (!manager || manager.active !== 1) return { ok: false, error: "Sign in required." };

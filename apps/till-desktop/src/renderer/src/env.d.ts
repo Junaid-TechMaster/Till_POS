@@ -42,6 +42,7 @@ interface TillBridge {
   transactions: (from: string, to: string) => Promise<StoredSale[]>;
   runReport: (id: string, from: string, to: string) => Promise<ReportResult>;
   closeZ: (staffId: string, blind: boolean) => Promise<{ ok: true; report: ReportResult; zNumber: number } | { ok: false; error: string }>;
+  dayEnd: (staffId: string) => Promise<{ ok: true; email: string; zNumber: number | null; warning?: string } | { ok: false; error: string }>;
   expectedCash: () => Promise<number>;
   cashUp: (input: { staffId: string; expectedPence: number; countedPence: number; blind: boolean; notes: string }) => Promise<boolean>;
   exportCsv: (title: string, csv: string) => Promise<boolean>;

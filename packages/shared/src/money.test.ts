@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { formatGbp, interpretTenderPence, priceLine } from "./money.js";
+import { formatGbp, interpretTenderPence, parsePriceToPence, priceLine } from "./money.js";
 
 describe("formatGbp", () => {
   it("formats pence as pounds", () => {
@@ -18,6 +18,18 @@ describe("interpretTenderPence", () => {
     expect(interpretTenderPence("100")).toBe(100);
     expect(interpretTenderPence("")).toBeNull();
     expect(interpretTenderPence("12a")).toBeNull();
+  });
+});
+
+describe("parsePriceToPence", () => {
+  it("reads a typed pound price and a numpad amount", () => {
+    expect(parsePriceToPence("10.50")).toBe(1050);
+    expect(parsePriceToPence("1.5")).toBe(150);
+    expect(parsePriceToPence("£0.35")).toBe(35);
+    expect(parsePriceToPence("10")).toBe(1000);
+    expect(parsePriceToPence("1050")).toBe(1050);
+    expect(parsePriceToPence("10.555")).toBeNull();
+    expect(parsePriceToPence("")).toBeNull();
   });
 });
 

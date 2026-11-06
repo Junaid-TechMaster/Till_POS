@@ -1,25 +1,71 @@
-import { mkdirSync } from "node:fs";
-import { join } from "node:path";
+import { copyFileSync, existsSync, mkdirSync } from "node:fs";
+import { dirname, join } from "node:path";
 import Database from "better-sqlite3";
 import { app } from "electron";
 import { localStamp } from "@tillpro/shared";
 import type { CustomerRecord, ProductRecord, ShopSettings, StaffPublic, VatRate } from "@tillpro/shared";
-import { CATEGORIES, CUSTOMERS, DEFAULT_SETTINGS, PRODUCTS } from "../data/catalog";
+import { DEFAULT_SETTINGS } from "../data/catalog";
 import type { OpenSalePayload, StoredSale } from "../engine/types";
 import { hashPin, verifyPin } from "./pin";
 
 let db: Database.Database | null = null;
+let activeShop = "";
 
 export function getDb(): Database.Database {
   if (db) return db;
-  const dir = app.getPath("userData");
+  return openDatabase(join(app.getPath("userData"), "tillpro.sqlite"), "");
+}
+
+export function openShop(clientCode: string, username: string): void {
+  const key = clientCode.replace(/[^A-Za-z0-9_-]/g, "").slice(0, 40) || "shop";
+  if (db && activeShop === key) return;
+  closeDb();
+  const dir = join(app.getPath("userData"), "shops", key);
   mkdirSync(dir, { recursive: true });
-  db = new Database(join(dir, "tillpro.sqlite"));
+  const target = join(dir, "tillpro.sqlite");
+  if (!existsSync(target)) adoptLegacy(target, username);
+  openDatabase(target, key);
+}
+
+function closeDb(): void {
+  if (!db) return;
+  try {
+    db.pragma("wal_checkpoint(TRUNCATE)");
+  } catch {
+    // The shop file is still closed so the next client can open its own database.
+  }
+  db.close();
+  db = null;
+  activeShop = "";
+}
+
+function openDatabase(file: string, shopKey: string): Database.Database {
+  mkdirSync(dirname(file), { recursive: true });
+  db = new Database(file);
   db.pragma("journal_mode = WAL");
   db.pragma("foreign_keys = ON");
   migrate(db);
   seed(db);
+  activeShop = shopKey;
+  if (shopKey) setSetting(db, "client_code", shopKey);
   return db;
+}
+
+function adoptLegacy(target: string, username: string): void {
+  const legacy = join(app.getPath("userData"), "tillpro.sqlite");
+  if (!existsSync(legacy)) return;
+  const legacyDb = new Database(legacy, { readonly: true, fileMustExist: true });
+  let owner = "";
+  try {
+    const row = legacyDb.prepare("SELECT value FROM settings WHERE key = 'admin_username'").get() as { value: string } | undefined;
+    owner = row?.value ?? "";
+  } catch {
+    owner = "";
+  } finally {
+    legacyDb.close();
+  }
+  if (!owner || owner.toLowerCase() !== username.trim().toLowerCase()) return;
+  copyFileSync(legacy, target);
 }
 
 function migrate(database: Database.Database): void {
@@ -176,46 +222,24 @@ function seed(database: Database.Database): void {
     alignAccounts(database);
     return;
   }
-  const insertStaff = database.prepare(
-    "INSERT INTO staff (id, name, role, pin_hash, pin_salt, active) VALUES (?, ?, ?, ?, ?, 1)",
-  );
-  const people: { id: string; name: string; role: string; pin: string }[] = [
-    { id: "1", name: "Admin", role: "admin", pin: "DemoShop-12345" },
-  ];
-  const insertCategory = database.prepare(
-    "INSERT INTO categories (id, name, color, sort_order, active) VALUES (?, ?, ?, ?, 1)",
-  );
-  const insertProduct = database.prepare(`
-    INSERT INTO products (id, name, barcode, plu, category_id, price_pence, cost_pence, vat_rate, stock_qty, min_stock, image, age_restricted, active)
-    VALUES (@id, @name, @barcode, @plu, @categoryId, @pricePence, @costPence, @vatRate, @stockQty, @minStock, @image, @ageRestricted, 1)
-  `);
-  const insertCustomer = database.prepare(
-    "INSERT INTO customers (id, name, phone, email, notes) VALUES (?, ?, ?, ?, ?)",
-  );
+  const secret = hashPin("change-me");
+  const blankShop: ShopSettings = {
+    ...DEFAULT_SETTINGS,
+    shopName: "",
+    addressLines: [],
+    vatNumber: "",
+    phone: "",
+  };
   const tx = database.transaction(() => {
-    for (const person of people) {
-      const pin = hashPin(person.pin);
-      insertStaff.run(person.id, person.name, person.role, pin.hash, pin.salt);
-    }
-    for (const category of CATEGORIES) {
-      insertCategory.run(category.id, category.name, category.color, category.sortOrder);
-    }
-    for (const product of PRODUCTS) {
-      insertProduct.run({
-        ...product,
-        ageRestricted: product.ageRestricted ? 1 : 0,
-        active: 1,
-      });
-    }
-    for (const customer of CUSTOMERS) {
-      insertCustomer.run(customer.id, customer.name, customer.phone, customer.email, customer.notes);
-    }
-    setSetting(database, "shop", JSON.stringify(DEFAULT_SETTINGS));
+    database
+      .prepare("INSERT INTO staff (id, name, role, pin_hash, pin_salt, active) VALUES ('1', 'Admin', 'admin', ?, ?, 1)")
+      .run(secret.hash, secret.salt);
+    setSetting(database, "shop", JSON.stringify(blankShop));
     setSetting(database, "next_slip", "1001");
-    setSetting(database, "default_pins", "1");
+    setSetting(database, "default_pins", "0");
     setSetting(database, "seeded", "1");
     setSetting(database, "open_sale", "");
-    setSetting(database, "admin_username", "demo-shop");
+    setSetting(database, "admin_username", "");
     setSetting(database, "account_model", "admin-cashier");
     database.prepare("INSERT INTO shifts (opened_at, opening_float_pence) VALUES (?, 0)").run(localStamp());
   });
@@ -304,8 +328,8 @@ export function saveSettings(settings: ShopSettings): void {
 }
 
 export function loginAdmin(username: string, password: string): StaffPublic | null {
-  const expected = (getSetting(getDb(), "admin_username") || "demo-shop").toLowerCase();
-  if (username.trim().toLowerCase() !== expected) return null;
+  const expected = getSetting(getDb(), "admin_username").toLowerCase();
+  if (!expected || username.trim().toLowerCase() !== expected) return null;
   const row = getDb().prepare("SELECT id, name, role, pin_hash, pin_salt, active FROM staff WHERE id = '1'").get() as
     | { id: string; name: string; role: StaffPublic["role"]; pin_hash: string; pin_salt: string; active: number }
     | undefined;
@@ -327,7 +351,7 @@ export function setShopAdmin(username: string, password: string): void {
 }
 
 export function adminUsername(): string {
-  return getSetting(getDb(), "admin_username") || "demo-shop";
+  return getSetting(getDb(), "admin_username");
 }
 
 export function loginStaff(id: string, pin: string): StaffPublic | null {

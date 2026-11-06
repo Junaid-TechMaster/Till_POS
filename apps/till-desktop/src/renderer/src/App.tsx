@@ -83,7 +83,10 @@ export function App() {
     const next = await window.till.activateLicence(username.trim(), password);
     setGate(next);
     useTillStore.setState({ licenceLabel: next.label, licenceBanner: next.banner });
-    if (next.activated && !next.locked) setShopReady(true);
+    if (next.activated && !next.locked) {
+      await useTillStore.getState().hydrate();
+      setShopReady(true);
+    }
     setPassword("");
   }
 

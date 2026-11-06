@@ -89,11 +89,15 @@ export function StaffScreen() {
             className="flex flex-col gap-2 rounded bg-white p-3 text-[var(--tp-ink)]"
             onSubmit={(event) => {
               event.preventDefault();
-              void save({ id: cashierId.trim(), name: cashierName.trim(), role: "cashier", pin: cashierPin || undefined });
+              if (!cashierPin.trim()) {
+                setError("Enter a new PIN. The cashier does not need the old one.");
+                return;
+              }
+              void save({ id: cashierId.trim(), name: cashierName.trim(), role: "cashier", pin: cashierPin.trim() });
             }}
           >
             <h2 className="text-xl font-extrabold">{cashier ? "Edit cashier" : "Add cashier"}</h2>
-            <p>One cashier. They can sell, change stock, and edit their own PIN. They cannot change the admin.</p>
+            <p>One cashier. If they forget the PIN, sign in as admin and enter a new one here. The old PIN is not required. Tell them the ID and the new PIN.</p>
             <label className="field">
               ID
               <input value={cashierId} onChange={(event) => setCashierId(event.target.value)} disabled={Boolean(cashier)} required />
@@ -104,7 +108,7 @@ export function StaffScreen() {
             </label>
             <label className="field">
               {cashier ? "New PIN" : "PIN"}
-              <input value={cashierPin} onChange={(event) => setCashierPin(event.target.value)} inputMode="numeric" required={!cashier} />
+              <input value={cashierPin} onChange={(event) => setCashierPin(event.target.value)} inputMode="numeric" placeholder="New PIN" required />
             </label>
             <button type="submit" className="tp-btn tone-green">{cashier ? "Save cashier" : "Add cashier"}</button>
           </form>

@@ -39,4 +39,6 @@ export const env = {
   port: Number(process.env.PORT ?? 8787),
   nodeEnv: process.env.NODE_ENV ?? "development",
   licencePrivateKey: privateKey(),
+  resendApiKey: process.env.RESEND_API_KEY ?? "",
+  emailFrom: process.env.EMAIL_FROM ?? "",
 };
