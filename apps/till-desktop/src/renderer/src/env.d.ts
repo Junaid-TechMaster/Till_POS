@@ -42,6 +42,7 @@ interface TillBridge {
   transactions: (from: string, to: string) => Promise<StoredSale[]>;
   runReport: (id: string, from: string, to: string) => Promise<ReportResult>;
   closeZ: (staffId: string, blind: boolean) => Promise<{ ok: true; report: ReportResult; zNumber: number } | { ok: false; error: string }>;
+  dayEnd: (staffId: string) => Promise<{ ok: true; email: string; zNumber: number | null; warning?: string } | { ok: false; error: string }>;
   expectedCash: () => Promise<number>;
   cashUp: (input: { staffId: string; expectedPence: number; countedPence: number; blind: boolean; notes: string }) => Promise<boolean>;
   exportCsv: (title: string, csv: string) => Promise<boolean>;
@@ -63,6 +64,14 @@ interface TillBridge {
     banner: string | null;
     lockMessage: string | null;
   }>;
+  checkUpdate: () => Promise<{
+    current: string;
+    latest: string;
+    url: string | null;
+    notes: string;
+    error: string | null;
+  }>;
+  openExternal: (url: string) => Promise<boolean>;
   activateLicence: (username: string, password: string) => Promise<{
     activated: boolean;
     status: string;

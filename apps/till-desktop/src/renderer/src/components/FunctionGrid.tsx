@@ -17,7 +17,7 @@ export function FunctionGrid() {
     { id: "hold", label: "Hold/Recall", run: () => openDialog({ name: "hold" }) },
     { id: "reports", label: "Reports", run: () => setScreen("reports") },
     { id: "print", label: "Print Last", run: () => openDialog({ name: "receipt" }) },
-    { id: "sales", label: "Sales", run: () => setScreen("transactions") },
+    { id: "dayend", label: "Day end", run: () => openDialog({ name: "dayEnd" }) },
     { id: "extras", label: "Extras", run: () => openDialog({ name: "extras" }) },
   ];
 

@@ -1,7 +1,7 @@
 /** Single source for the product name. Do not hard-code the brand elsewhere. */
 export const PRODUCT_NAME = "TillPro";
 
-export const APP_VERSION = "1.0.1";
+export const APP_VERSION = "1.0.5";
 
 export const CURRENCY = "GBP" as const;
 

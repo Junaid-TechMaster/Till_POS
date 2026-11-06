@@ -83,7 +83,8 @@ export type DialogState =
   | { name: "receipt"; slipNo?: number }
   | { name: "manager"; purpose: string; action: ManagerAction }
   | { name: "help" }
-  | { name: "priceOverride" };
+  | { name: "priceOverride" }
+  | { name: "dayEnd" };
 
 export type ManagerAction =
   | { type: "voidLine" }

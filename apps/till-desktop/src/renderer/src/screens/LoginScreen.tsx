@@ -1,13 +1,12 @@
 import { PRODUCT_NAME } from "@tillpro/shared";
 import { useEffect, useState } from "react";
-import { DEMO_ADMIN_USERNAME } from "../../../data/catalog";
 import { useTillStore } from "../store/useTillStore";
 
 export function LoginScreen() {
   const login = useTillStore((state) => state.login);
   const loginAdmin = useTillStore((state) => state.loginAdmin);
   const [mode, setMode] = useState<"admin" | "cashier">("cashier");
-  const [username, setUsername] = useState(DEMO_ADMIN_USERNAME);
+  const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
   const [stage, setStage] = useState<"id" | "pin">("id");
   const [staffId, setStaffId] = useState("");
@@ -62,7 +61,7 @@ export function LoginScreen() {
     }
     const ok = await login(staffId, pin);
     if (!ok) {
-      setError("ID or PIN not recognised");
+      setError("ID or PIN not recognised. The shop admin can set a new PIN in Extras, Staff.");
       setPin("");
       setStage("id");
       setStaffId("");

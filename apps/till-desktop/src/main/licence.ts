@@ -13,7 +13,7 @@ import {
   type LicenceView,
 } from "@tillpro/shared";
 import { compactVerify, decodeJwt, importSPKI } from "jose";
-import { setShopAdmin } from "./db";
+import { openShop, setShopAdmin } from "./db";
 
 interface StoredLicence {
   token: string;
@@ -262,8 +262,72 @@ export async function activateLicence(username: string, password: string): Promi
   }
   lastNetworkAttempt = Date.now();
   const state = await acceptToken(body.token, readStored());
-  if (state.activated) setShopAdmin(body.username || username, password);
+  if (state.activated) {
+    const payload = decodeJwt(body.token);
+    const clientCode = typeof payload.sub === "string" ? payload.sub : username;
+    const shopUsername = body.username || username;
+    openShop(clientCode, shopUsername);
+    setShopAdmin(shopUsername, password);
+  }
   return remember(state);
+}
+
+export async function sendDayEnd(report: {
+  shopName: string;
+  openedAt: string;
+  closedAt: string;
+  closedBy: string;
+  takings: string;
+  saleCount: number;
+  refundCount: number;
+  slips: unknown[];
+}): Promise<{ ok: true; email: string } | { ok: false; error: string }> {
+  await licenceState(true);
+  const stored = readStored();
+  if (!stored?.token) return { ok: false, error: "Sign in on the till again, then close the day." };
+  let response: Response;
+  try {
+    response = await fetch(`${apiBaseUrl()}/license/day-end`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ token: stored.token, ...report }),
+    });
+  } catch {
+    return { ok: false, error: "Could not reach the server." };
+  }
+  let body: { ok?: boolean; email?: string; error?: string } = {};
+  try {
+    body = (await response.json()) as { ok?: boolean; email?: string; error?: string };
+  } catch {
+    return { ok: false, error: "Could not reach the server." };
+  }
+  if (!response.ok || !body.email) return { ok: false, error: body.error ?? "The report could not be emailed." };
+  return { ok: true, email: body.email };
+}
+
+export async function checkForUpdate(): Promise<{
+  current: string;
+  latest: string;
+  url: string | null;
+  notes: string;
+  error: string | null;
+}> {
+  const current = APP_VERSION;
+  try {
+    const response = await fetch(`${apiBaseUrl()}/releases.json`);
+    if (!response.ok) {
+      return { current, latest: current, url: null, notes: "", error: "Could not reach the update list." };
+    }
+    const body = (await response.json()) as {
+      latest?: string;
+      versions?: { version: string; url: string; notes?: string }[];
+    };
+    const latest = body.latest || current;
+    const match = body.versions?.find((item) => item.version === latest);
+    return { current, latest, url: match?.url ?? null, notes: match?.notes ?? "", error: null };
+  } catch {
+    return { current, latest: current, url: null, notes: "", error: "Could not reach the update list." };
+  }
 }
 
 export function assertSalesAllowed(): void {

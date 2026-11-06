@@ -31,6 +31,15 @@ export function formatDate(input: string | Date): string {
  * One or two digits are whole pounds ("10" => £10.00).
  * Three or more digits are pence ("1050" => £10.50).
  */
+export function parsePriceToPence(input: string): number | null {
+  const text = input.trim().replace(/^£/, "");
+  if (!text) return null;
+  if (/^\d+$/.test(text)) return interpretTenderPence(text);
+  const match = /^(\d+)\.(\d{1,2})$/.exec(text);
+  if (!match) return null;
+  return Number(match[1]) * 100 + Number(match[2].padEnd(2, "0"));
+}
+
 export function interpretTenderPence(buffer: string): number | null {
   if (!/^\d+$/.test(buffer) || buffer.length > 7) return null;
   const n = Number(buffer);

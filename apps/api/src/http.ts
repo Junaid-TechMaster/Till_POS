@@ -5,7 +5,8 @@ import { formatGbp, PRODUCT_NAME, type LicenceStatus } from "@tillpro/shared";
 import { prisma } from "./prisma.js";
 import { hashPassword, verifyPassword } from "./passwords.js";
 import { addDays, readSettings, writeSettings, type ShopLicenceSettings } from "./settings.js";
-import { signAdmin, verifyAdmin, type AdminToken } from "./tokens.js";
+import { sendEmail } from "./mail.js";
+import { signAdmin, verifyAdmin, verifyLicence, type AdminToken } from "./tokens.js";
 import {
   accountsForLogin,
   audit,
@@ -583,6 +584,69 @@ export async function registerRoutes(app: import("fastify").FastifyInstance): Pr
     const fresh = await prisma.client.findUniqueOrThrow({ where: { id: client.id }, include: clientInclude });
     const token = await issueForDevice(fresh, { deviceId: device.deviceId, blocked: device.status === "BLOCKED" });
     return { token };
+  });
+
+  app.post("/license/day-end", { config: { rateLimit: { max: 6, timeWindow: "10 minutes" } } }, async (request, reply) => {
+    const slip = z.object({
+      slip: z.number().int(),
+      when: z.string().max(40),
+      staff: z.string().max(80),
+      kind: z.string().max(20),
+      amount: z.string().max(40),
+      payment: z.string().max(80),
+      lines: z.array(z.object({ description: z.string().max(120), qty: z.number(), amount: z.string().max(40) })).max(80),
+    });
+    const body = z
+      .object({
+        token: z.string().min(20).max(8000),
+        shopName: z.string().max(120),
+        openedAt: z.string().max(40),
+        closedAt: z.string().max(40),
+        closedBy: z.string().max(80),
+        takings: z.string().max(40),
+        saleCount: z.number().int().nonnegative(),
+        refundCount: z.number().int().nonnegative(),
+        slips: z.array(slip).max(500),
+      })
+      .safeParse(request.body);
+    if (!body.success) return reply.code(400).send({ error: "The day-end report was rejected." });
+    const licence = await verifyLicence(body.data.token);
+    if (!licence) return reply.code(401).send({ error: "Sign in on the till again, then close the day." });
+    const client = await prisma.client.findUnique({
+      where: { clientCode: licence.clientCode },
+      include: { devices: true },
+    });
+    const device = client?.devices.find((item) => item.deviceId === licence.deviceId && item.status === "ACTIVE");
+    if (!client || !device) return reply.code(403).send({ error: "This till is not allowed to send the day-end report." });
+    const email = client.email.trim();
+    if (!email.includes("@")) return reply.code(400).send({ error: "This client has no email address." });
+    const lines = [
+      `${PRODUCT_NAME} day end`,
+      "",
+      client.businessName || body.data.shopName || "Shop",
+      `From ${body.data.openedAt}`,
+      `To ${body.data.closedAt}`,
+      `Closed by ${body.data.closedBy}`,
+      `Sales ${body.data.saleCount}`,
+      `Refunds ${body.data.refundCount}`,
+      `Takings ${body.data.takings}`,
+      "",
+      "Transactions",
+    ];
+    if (body.data.slips.length === 0) lines.push("No transactions in this day.");
+    for (const item of body.data.slips) {
+      lines.push("");
+      lines.push(`Slip ${item.slip}  ${item.when}  ${item.staff}  ${item.kind}  ${item.amount}  ${item.payment}`);
+      for (const line of item.lines) lines.push(`  ${line.qty} x ${line.description}  ${line.amount}`);
+    }
+    const sent = await sendEmail({
+      to: email,
+      subject: `Day end ${body.data.closedAt.slice(0, 10)} — ${client.businessName || "TillPro"}`,
+      text: lines.join("\n"),
+    });
+    if (!sent.ok) return reply.code(503).send({ error: sent.error });
+    await audit("license", "day-end.email", email, client.id);
+    return { ok: true, email };
   });
 
   app.post("/sync/heartbeat", async (request, reply) => {
