@@ -29,7 +29,7 @@ const controls = [
   ["Reports and cash up", "See sales for the open day. Cash up compares the drawer with the till before the day is closed."],
   ["Day end", "The till emails that day’s transactions to the shop’s address, then closes the day. The next sale starts a new day."],
   ["Stock", "Each product can track a quantity. The stock screen shows what is low and records an adjustment."],
-  ["Staff sign-in", "The shop signs in with the email and password from the dashboard. The cashier then signs in with an ID and a PIN. Forgetting the PIN is fixed by the admin, without the old PIN."],
+  ["Staff sign-in", "The shop signs in with its email and password. The cashier then signs in with an ID and a PIN. Forgetting the PIN is fixed by the admin, without the old PIN."],
   ["Updates", "Settings and Extras include Check for updates. If a newer installer is listed, Download update opens it. Installing it keeps that shop’s products and sales."],
 ];
 
@@ -50,7 +50,7 @@ const features = [
     title: "Each shop keeps its own products",
     image: "/screenshots/catalogue.png",
     alt: "TillPro products inside the Fruit and Veg category",
-    copy: "A new client created on the dashboard gets an empty till. Their admin and cashier add the categories and products. Another shop on the same computer does not see them.",
+    copy: "A new shop starts with an empty till. The admin and cashier add the categories and products. Another shop on the same computer does not see them.",
     points: [
       "Categories have a name, a colour, and an optional picture.",
       "Products have a barcode, PLU, price, VAT rate, and stock.",
@@ -62,7 +62,7 @@ const features = [
     title: "Staff, stock, and the end of the day",
     image: "/screenshots/staff.png",
     alt: "TillPro staff screen where the admin sets a cashier PIN",
-    copy: "The shop signs in with the email and password you send. That account is the till admin. The admin adds one cashier. At the end of the day the till can email that day’s transactions to the shop.",
+    copy: "The shop signs in with its email and password. That account is the till admin. The admin adds one cashier. At the end of the day the till can email that day’s transactions to the shop.",
     points: [
       "The cashier signs in with an ID and a PIN.",
       "If the cashier forgets the PIN, the admin sets a new one. The old PIN is not required.",
@@ -93,7 +93,6 @@ export function App() {
           <a href="#pricing">Pricing</a>
           <a href="#download">Download</a>
           <a href="#contact">Contact</a>
-          <a className="button ghost" href="/dashboard/">Provider sign in</a>
         </nav>
       </header>
 
@@ -103,7 +102,7 @@ export function App() {
             <p className="kicker">Windows till for independent shops</p>
             <h1>Sell from a touch screen. Keep every shop separate.</h1>
             <p className="lede">
-              {PRODUCT_NAME} is the till your client installs on their shop computer. You create the shop on your dashboard, send the email and password, and they sign in. Their products, sales, and cashier stay on that computer.
+              {PRODUCT_NAME} is the till a shop installs on its computer. The shop signs in, then the cashier signs in. Products, sales, and staff stay on that computer.
             </p>
             <div className="hero-actions">
               {latest ? <a className="button gold" href={latest.url}>Download {latest.file}</a> : <a className="button gold" href="#download">Download the till</a>}
@@ -118,7 +117,7 @@ export function App() {
 
         <section id="features">
           <h2>What the till does</h2>
-          <p className="section-intro">Every control the shop uses during the day is on the till. The provider dashboard is where you create the client and the subscription.</p>
+          <p className="section-intro">Every control the shop uses during the day is on the till.</p>
           <div className="features">
             {features.map((feature, index) => (
               <article className={index % 2 ? "feature reverse" : "feature"} key={feature.title}>
@@ -145,7 +144,7 @@ export function App() {
 
         <section id="pricing">
           <h2>Pricing</h2>
-          <p className="section-intro">One price for one shop. The shop can use the till on the number of computers you allow. You record payment from the provider dashboard.</p>
+          <p className="section-intro">One price for one shop. The shop can use the till on the computers allowed for that shop.</p>
           <div className="prices">
             <article className="price">
               <p className="kicker">Monthly</p>
@@ -172,7 +171,7 @@ export function App() {
 
         <section id="download">
           <h2>Download the till</h2>
-          <p className="section-intro">Install the latest file, then sign in with the shop email and password from the provider. Windows may ask before it runs an installer that is not signed. Choose to run it. An installed till can also open Settings and press Check for updates.</p>
+          <p className="section-intro">Install the latest file, then sign in with the shop email and password. Windows may ask before it runs an installer that is not signed. Choose to run it. An installed till can also open Settings and press Check for updates.</p>
           <div className="downloads">
             {(releases?.versions ?? []).map((item) => (
               <article className="release" key={item.version}>
@@ -203,8 +202,6 @@ export function App() {
             <dl>
               <dt>Address</dt>
               <dd>12 Market Street<br />Manchester<br />M1 1AE</dd>
-              <dt>Provider</dt>
-              <dd><a href="/dashboard/">Open the dashboard</a></dd>
             </dl>
           </div>
         </section>
@@ -212,7 +209,7 @@ export function App() {
 
       <footer>
         <span>{PRODUCT_NAME}</span>
-        <span>Windows till, shop sign-in, and provider dashboard.</span>
+        <span>Windows till for independent shops.</span>
       </footer>
     </>
   );
