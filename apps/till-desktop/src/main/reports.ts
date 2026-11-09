@@ -108,8 +108,8 @@ const definitions: Definition[] = [
   { id: "x-report", name: "X Report", group: "Till", description: "Current shift totals. Does not reset the till.", needsManager: false, blind: false, resets: false, columns: labelColumns, run: (range) => summaryRows(range, true, false) },
   { id: "s-report", name: "S Report", group: "Till", description: "Sales summary for the selected dates.", needsManager: false, blind: false, resets: false, columns: labelColumns, run: (range) => summaryRows(range, false, false) },
   { id: "blind-s", name: "Blind S", group: "Till", description: "Period summary with expected cash hidden, for a cash-up count.", needsManager: false, blind: true, resets: false, columns: labelColumns, run: (range) => summaryRows(range, false, true) },
-  { id: "blind-z", name: "Blind Z", group: "Till", description: "End of day with expected cash hidden. Closes the shift.", needsManager: true, blind: true, resets: true, columns: labelColumns, run: (range) => summaryRows(range, true, true) },
-  { id: "z-report", name: "Z Report", group: "Till", description: "End of day. Closes the shift and issues the next Z number.", needsManager: true, blind: false, resets: true, columns: labelColumns, run: (range) => summaryRows(range, true, false) },
+  { id: "blind-z", name: "Blind Z", group: "Till", description: "Shift change with expected cash hidden. Clears this shift's transactions.", needsManager: true, blind: true, resets: true, columns: labelColumns, run: (range) => summaryRows(range, true, true) },
+  { id: "z-report", name: "Z Report", group: "Till", description: "Shift change. Saves the Z report, clears this shift's transactions, and opens the next shift.", needsManager: true, blind: false, resets: true, columns: labelColumns, run: (range) => summaryRows(range, true, false) },
   {
     id: "sales-by-product",
     name: "Sales by product",
@@ -705,6 +705,9 @@ export function closeZ(staffId: string, blind: boolean): { ok: true; report: Rep
       JSON.stringify(report),
     );
     database.prepare("UPDATE shifts SET closed_at = ?, z_number = ? WHERE id = ?").run(now, next, shift.id);
+    database.prepare("DELETE FROM sale_lines WHERE sale_id IN (SELECT id FROM sales WHERE shift_id = ?)").run(shift.id);
+    database.prepare("DELETE FROM tenders WHERE sale_id IN (SELECT id FROM sales WHERE shift_id = ?)").run(shift.id);
+    database.prepare("DELETE FROM sales WHERE shift_id = ?").run(shift.id);
     database.prepare("INSERT INTO shifts (opened_at, opening_float_pence) VALUES (?, 0)").run(now);
   });
   tx();

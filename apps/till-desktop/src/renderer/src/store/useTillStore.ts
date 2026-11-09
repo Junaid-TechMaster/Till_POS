@@ -48,6 +48,8 @@ interface TillState {
   kiosk: boolean;
   licenceLabel: string;
   licenceBanner: string | null;
+  demoShop: boolean;
+  reloadHistory: () => Promise<void>;
   pressDigit: (digit: string) => void;
   pressDoubleZero: () => void;
   backspace: () => void;
@@ -148,6 +150,12 @@ export const useTillStore = create<TillState>((set, get) => ({
   kiosk: false,
   licenceLabel: "",
   licenceBanner: null,
+  demoShop: typeof window === "undefined" || !window.till,
+  reloadHistory: async () => {
+    if (!window.till?.bootstrap) return;
+    const data = await window.till.bootstrap();
+    set({ history: data.history as CompletedSale[], demoShop: data.demo });
+  },
 
   flash: (text, tone = "info") => {
     const token = Date.now();
@@ -252,20 +260,17 @@ export const useTillStore = create<TillState>((set, get) => ({
   addProduct: (productId) => {
     const state = get();
     if (state.dialog) return;
+    const typed = interpretTenderPence(state.buffer);
+    const unitPricePence = typed !== null && typed > 0 ? typed : undefined;
     if (state.saleComplete) state.newSale();
+    else if (unitPricePence !== undefined) set({ buffer: "" });
     const product = get().products.find((item) => item.id === productId && item.active);
     if (!product) return;
-    let qty = 1;
-    const buffer = get().buffer;
-    if (/^\d{1,2}$/.test(buffer) && Number(buffer) >= 1) {
-      qty = Number(buffer);
-      set({ buffer: "" });
-    }
     if (product.ageRestricted) {
-      set({ dialog: { name: "age", productId, qty } });
+      set({ dialog: { name: "age", productId, qty: 1, unitPricePence } });
       return;
     }
-    commitProduct(product, qty);
+    commitProduct(product, 1, unitPricePence);
   },
 
   confirmAge: (yes) => {
@@ -279,7 +284,7 @@ export const useTillStore = create<TillState>((set, get) => ({
     const product = get().products.find((item) => item.id === dialog.productId);
     if (!product) return;
     pushAudit("age_check", `${product.name} confirmed`);
-    commitProduct(product, dialog.qty);
+    commitProduct(product, dialog.qty, dialog.unitPricePence);
   },
 
   toggleNoVat: () => {
@@ -638,6 +643,7 @@ export const useTillStore = create<TillState>((set, get) => ({
       customers: data.customers,
       settings: data.settings,
       history: data.history as CompletedSale[],
+      demoShop: data.demo,
       held: data.held.map((item) => item.payload as HeldSale),
       nextSlip: data.nextSlip,
       ...priced,
@@ -746,10 +752,11 @@ function pushAudit(action: string, detail: string) {
   useTillStore.setState({ audit: [entry, ...useTillStore.getState().audit] });
 }
 
-function commitProduct(product: ProductRecord, qty: number) {
+function commitProduct(product: ProductRecord, qty: number, unitPricePence?: number) {
   const state = useTillStore.getState();
+  const price = unitPricePence && unitPricePence > 0 ? unitPricePence : product.pricePence;
   const existing = state.lines.find(
-    (line) => line.productId === product.id && line.discountPct === 0 && line.unitPricePence === product.pricePence,
+    (line) => line.productId === product.id && line.discountPct === 0 && line.unitPricePence === price,
   );
   let lines: BasketLine[];
   let selected = existing?.id ?? "";
@@ -762,7 +769,7 @@ function commitProduct(product: ProductRecord, qty: number) {
       productId: product.id,
       description: product.name,
       qty,
-      unitPricePence: product.pricePence,
+      unitPricePence: price,
       discountPct: 0,
       vatRate: product.vatRate,
       costPence: product.costPence,

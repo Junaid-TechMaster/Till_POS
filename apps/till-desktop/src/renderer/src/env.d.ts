@@ -20,6 +20,7 @@ interface TillBridge {
     openSale: OpenSalePayload | null;
     nextSlip: number;
     reports: { id: string; name: string; group: string; description: string; needsManager: boolean; blind: boolean; resets: boolean }[];
+    demo: boolean;
   }>;
   login: (id: string, pin: string) => Promise<{ ok: boolean; staff?: StaffPublic }>;
   loginAdmin: (username: string, password: string) => Promise<{ ok: boolean; staff?: StaffPublic }>;

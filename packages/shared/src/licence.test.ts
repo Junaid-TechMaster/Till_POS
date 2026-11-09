@@ -32,7 +32,29 @@ describe("evaluateLicence", () => {
     expect(view.status).toBe("TRIAL");
     expect(view.locked).toBe(false);
     expect(view.label).toBe("Trial 2 days left");
+    expect(view.banner).toBe("2 days left. Pay the dues to keep using this till.");
+  });
+
+  it("stays quiet while more than two days remain", () => {
+    const now = Date.parse("2026-11-05T00:00:00.000Z");
+    const view = evaluateLicence(
+      {
+        ...baseClaims,
+        status: "TRIAL",
+        trialEndsAt: new Date(now + 3 * DAY).toISOString(),
+        graceEndsAt: new Date(now + 5 * DAY).toISOString(),
+      },
+      clock(now, now),
+    );
     expect(view.banner).toBeNull();
+  });
+
+  it("warns an active shop when two days of the paid period remain", () => {
+    const now = Date.parse("2026-11-29T00:00:00.000Z");
+    const view = evaluateLicence(baseClaims, clock(now, now));
+    expect(view.status).toBe("ACTIVE");
+    expect(view.locked).toBe(false);
+    expect(view.banner).toBe("2 days left. Pay the dues to keep using this till.");
   });
 
   it("keeps an active subscription open", () => {

@@ -1,6 +1,20 @@
 {
-  "latest": "1.0.5",
+  "latest": "1.0.7",
   "versions": [
+    {
+      "version": "1.0.7",
+      "released": "2026-11-10",
+      "file": "TillPro-Setup-1.0.7.exe",
+      "url": "https://github.com/Junaid-TechMaster/Till_POS/releases/download/v1.0.7/TillPro-Setup-1.0.7.exe",
+      "notes": "Demo sign-in on the login screen, sample products, a contact line, a Z report that clears the shift, and a payment reminder when two days remain."
+    },
+    {
+      "version": "1.0.6",
+      "released": "2026-11-10",
+      "file": "TillPro-Setup-1.0.6.exe",
+      "url": "https://github.com/Junaid-TechMaster/Till_POS/releases/download/v1.0.6/TillPro-Setup-1.0.6.exe",
+      "notes": "Type a price on the keypad, then tap a category and a product. The product is sold at that price."
+    },
     {
       "version": "1.0.5",
       "released": "2026-11-07",

@@ -178,13 +178,14 @@ function DayEndDialog() {
       setError(result.error);
       return;
     }
-    flash(`Day end emailed to ${result.email}`, "good");
+    await useTillStore.getState().reloadHistory();
+    flash(`Day end emailed to ${result.email}. This shift's transactions are cleared.`, "good");
     close();
   }
 
   return (
     <Modal title="Day end" onClose={close} testId="dialog-day-end">
-      <p>This emails every transaction since the shop opened to the client email, then closes the day.</p>
+      <p>This emails every transaction in the open shift, then clears those transactions and opens the next shift.</p>
       {error ? <div className="flash flash-bad">{error}</div> : null}
       <button type="button" className="tp-btn tone-green" disabled={busy} onClick={() => void send()}>
         {busy ? "Sending…" : "Send day end"}
@@ -496,7 +497,7 @@ function HelpDialog() {
       <ul className="help-list">
         <li>Number keys and the numpad type into the entry row.</li>
         <li>Enter looks up a barcode or PLU. Clear, Esc, or Delete removes the basket items.</li>
-        <li>Backspace deletes the last digit. Type a quantity, then tap a product.</li>
+        <li>Backspace deletes the last digit. Type a price, then tap a category and a product. That product is sold at the price you typed.</li>
         <li>F1 Cash, F2 Card, F3 Customer, F4 Price Check, F5 Reports, F6 Print Last.</li>
         <li>Up and Down move through the basket.</li>
         <li>One or two digits are pounds. Three or more digits are pence. 1050 is £10.50.</li>

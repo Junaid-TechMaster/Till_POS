@@ -12,7 +12,7 @@ export function BasketPanel() {
   const openPriceChange = useTillStore((state) => state.openPriceChange);
   const selected = lines.find((line) => line.id === selectedLineId);
   const tender = buffer ? interpretTenderPence(buffer) : null;
-  const qtyHint = /^\d{1,2}$/.test(buffer) && Number(buffer) >= 1 ? `Qty ${Number(buffer)}` : null;
+  const priceHint = tender !== null && tender > 0 ? `Price ${formatGbp(tender)}` : null;
 
   return (
     <section className="basket" data-testid="basket" aria-label="Basket">
@@ -22,13 +22,13 @@ export function BasketPanel() {
           {buffer || "—"}
         </div>
         <div className="entry-hint">
-          {tender !== null && buffer.length >= 3 ? formatGbp(tender) : qtyHint}
+          {priceHint}
         </div>
       </div>
       {message ? <div className={`flash flash-${message.tone}`}>{message.text}</div> : null}
       <div className="basket-scroll">
         {lines.length === 0 ? (
-          <div className="empty-basket">Scan a barcode, or tap a category and a product.</div>
+          <div className="empty-basket">Type a price, then tap a category and a product. Or scan a barcode.</div>
         ) : (
           <table className="lines">
             <thead>

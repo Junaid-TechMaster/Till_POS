@@ -75,7 +75,7 @@ export type DialogState =
   | { name: "manual" }
   | { name: "lineDiscount" }
   | { name: "basketDiscount" }
-  | { name: "age"; productId: string; qty: number }
+  | { name: "age"; productId: string; qty: number; unitPricePence?: number }
   | { name: "card" }
   | { name: "change" }
   | { name: "petty" }

@@ -4,7 +4,7 @@ import Database from "better-sqlite3";
 import { app } from "electron";
 import { localStamp } from "@tillpro/shared";
 import type { CustomerRecord, ProductRecord, ShopSettings, StaffPublic, VatRate } from "@tillpro/shared";
-import { DEFAULT_SETTINGS } from "../data/catalog";
+import { CATEGORIES, DEFAULT_SETTINGS, PRODUCTS } from "../data/catalog";
 import type { OpenSalePayload, StoredSale } from "../engine/types";
 import { hashPin, verifyPin } from "./pin";
 
@@ -346,8 +346,55 @@ export function setShopAdmin(username: string, password: string): void {
   } else {
     database.prepare("INSERT INTO staff (id, name, role, pin_hash, pin_salt, active) VALUES ('1', 'Admin', 'admin', ?, ?, 1)").run(secret.hash, secret.salt);
   }
-  setSetting(database, "admin_username", username.trim().toLowerCase());
+  const normalised = username.trim().toLowerCase();
+  setSetting(database, "admin_username", normalised);
   setSetting(database, "account_model", "admin-cashier");
+  const demo = normalised === "demo-shop" || normalised === "demo@localhost";
+  setSetting(database, "demo_mode", demo ? "1" : "0");
+  if (demo) seedDemoCatalogue(database);
+}
+
+export function isDemoShop(): boolean {
+  return getSetting(getDb(), "demo_mode") === "1";
+}
+
+function seedDemoCatalogue(database: Database.Database): void {
+  const count = database.prepare("SELECT COUNT(*) as c FROM products").get() as { c: number };
+  if (count.c > 0) return;
+  const insertCategory = database.prepare(
+    "INSERT OR IGNORE INTO categories (id, name, color, sort_order, image, active) VALUES (?, ?, ?, ?, NULL, 1)",
+  );
+  const insertProduct = database.prepare(
+    `INSERT INTO products (id, name, barcode, plu, category_id, price_pence, cost_pence, vat_rate, stock_qty, min_stock, image, age_restricted, active)
+     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, NULL, ?, 1)`,
+  );
+  const shop: ShopSettings = {
+    ...DEFAULT_SETTINGS,
+    shopName: "TillPro Demo Shop",
+    addressLines: ["12 Market Street", "Manchester", "M1 1AE"],
+    phone: "0800 123 4567",
+    vatNumber: "",
+  };
+  const tx = database.transaction(() => {
+    for (const category of CATEGORIES) insertCategory.run(category.id, category.name, category.color, category.sortOrder);
+    for (const product of PRODUCTS) {
+      insertProduct.run(
+        product.id,
+        product.name,
+        product.barcode,
+        product.plu,
+        product.categoryId,
+        product.pricePence,
+        product.costPence,
+        product.vatRate,
+        product.stockQty,
+        product.minStock,
+        product.ageRestricted ? 1 : 0,
+      );
+    }
+    setSetting(database, "shop", JSON.stringify(shop));
+  });
+  tx();
 }
 
 export function adminUsername(): string {

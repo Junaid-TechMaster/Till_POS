@@ -32,6 +32,7 @@ import {
   writeDrawer,
   nextSlipValue,
   getDb,
+  isDemoShop,
 } from "./db";
 import { assertSalesAllowed, sendDayEnd } from "./licence";
 import { buildDayEnd, closeZ, listReportMeta, runReport } from "./reports";
@@ -47,6 +48,7 @@ export interface Bootstrap {
   openSale: OpenSalePayload | null;
   nextSlip: number;
   reports: ReturnType<typeof listReportMeta>;
+  demo: boolean;
 }
 
 export function registerDatabaseIpc(): void {
@@ -63,6 +65,7 @@ export function registerDatabaseIpc(): void {
       openSale: readOpenSale(),
       nextSlip: nextSlipValue(),
       reports: listReportMeta(),
+      demo: isDemoShop(),
     };
   });
 

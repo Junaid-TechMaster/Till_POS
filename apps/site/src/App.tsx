@@ -40,7 +40,7 @@ const features = [
     alt: "TillPro sale screen with categories, a basket, and cash buttons",
     copy: "The till opens on a touch sale screen. Categories fill the middle, the basket stays on the left, and cash, card, and the number pad stay under the right hand.",
     points: [
-      "Tap a category, then a product. The price and VAT are already on the button.",
+      "Type a price, then tap a category and a product. The product is sold at that price.",
       "Cash, card, and quick cash amounts. The change is shown before the next sale.",
       "No VAT removes the VAT from the prices on that sale.",
       "Clear empties the basket. The cross removes one line.",

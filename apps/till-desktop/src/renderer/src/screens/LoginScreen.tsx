@@ -1,4 +1,4 @@
-import { PRODUCT_NAME } from "@tillpro/shared";
+import { DEMO_CASHIER_ID, DEMO_SHOP_PASSWORD, PRODUCT_NAME } from "@tillpro/shared";
 import { useEffect, useState } from "react";
 import { useTillStore } from "../store/useTillStore";
 
@@ -74,7 +74,8 @@ export function LoginScreen() {
     <div className="login-screen" data-testid="login-screen">
       <div className="login-copy">
         <h1>{PRODUCT_NAME}</h1>
-        <p className="text-xl">Sign in through ID. Enter the cashier ID, then the PIN. Admin is the shop account from the dashboard.</p>
+        <p className="text-xl">Sign in through ID. Enter the cashier ID, then the PIN. Admin is the shop account.</p>
+        <p className="demo-inline">Demo cashier ID {DEMO_CASHIER_ID}. PIN {DEMO_SHOP_PASSWORD}. The demo account is valid for 1 day.</p>
         <div className="flex gap-2">
           <button type="button" className={`tp-btn ${mode === "admin" ? "tone-green" : "tone-teal"}`} onClick={() => { setMode("admin"); setError(""); }}>
             Admin

@@ -4,10 +4,10 @@ import { useTillStore } from "../store/useTillStore";
 
 const FALLBACK = [
   { id: "x-report", name: "X Report", group: "Till", description: "Current shift totals.", needsManager: false, resets: false },
-  { id: "z-report", name: "Z Report", group: "Till", description: "End of day. Closes the shift.", needsManager: true, resets: true },
+  { id: "z-report", name: "Z Report", group: "Till", description: "Shift change. Clears this shift's transactions and opens the next shift.", needsManager: true, resets: true },
   { id: "s-report", name: "S Report", group: "Till", description: "Sales summary for a period.", needsManager: false, resets: false },
   { id: "blind-s", name: "Blind S", group: "Till", description: "Summary without expected cash.", needsManager: false, resets: false },
-  { id: "blind-z", name: "Blind Z", group: "Till", description: "End of day without expected cash.", needsManager: true, resets: true },
+  { id: "blind-z", name: "Blind Z", group: "Till", description: "Shift change without expected cash. Clears this shift's transactions.", needsManager: true, resets: true },
   { id: "sales-by-product", name: "Sales by product", group: "Retail", description: "Quantity and takings.", needsManager: false, resets: false },
   { id: "sales-by-category", name: "Sales by category", group: "Retail", description: "Department takings.", needsManager: false, resets: false },
   { id: "sales-by-staff", name: "Sales by staff", group: "Retail", description: "Cashier takings.", needsManager: false, resets: false },
@@ -70,7 +70,8 @@ export function ReportsScreen() {
       return;
     }
     setResult(closed.report);
-    setMessage(`Z ${closed.zNumber} saved. This shift is closed.`);
+    await useTillStore.getState().reloadHistory();
+    setMessage(`Z ${closed.zNumber} saved. This shift's transactions are cleared and a new shift is open.`);
   }
 
   function csv() {

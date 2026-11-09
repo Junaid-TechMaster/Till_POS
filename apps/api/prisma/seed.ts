@@ -51,9 +51,8 @@ const demoPassword = "DemoShop-12345";
 const demoAccount = await prisma.clientAccount.findUnique({ where: { username: demoUsername } });
 if (!demoAccount) {
   const now = new Date();
-  const periodEnd = new Date(now);
-  periodEnd.setUTCFullYear(periodEnd.getUTCFullYear() + 1);
-  const graceEnd = new Date(periodEnd.getTime() + 2 * 24 * 60 * 60 * 1000);
+  const trialEndsAt = new Date(now.getTime() + 24 * 60 * 60 * 1000);
+  const graceEnd = new Date(trialEndsAt.getTime() + 2 * 24 * 60 * 60 * 1000);
   await prisma.client.create({
     data: {
       clientCode: "TP-000001",
@@ -62,8 +61,8 @@ if (!demoAccount) {
       email: "demo@localhost",
       phone: "0161 496 0123",
       address: "12 Market Street, Manchester, M1 1AE",
-      notes: "Demo shop for the installed till.",
-      status: "ACTIVE",
+      notes: "Demo shop for the installed till. Valid for 1 day.",
+      status: "TRIAL",
       monthlyPricePence: 2900,
       account: {
         create: {
@@ -73,12 +72,12 @@ if (!demoAccount) {
       },
       subscription: {
         create: {
-          status: "ACTIVE",
-          trialEndsAt: now,
-          currentPeriodEnd: periodEnd,
+          status: "TRIAL",
+          trialEndsAt,
+          currentPeriodEnd: trialEndsAt,
           graceEndsAt: graceEnd,
           maxDevices: 3,
-          lastPaidAt: now,
+          lastPaidAt: null,
         },
       },
     },

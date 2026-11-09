@@ -671,15 +671,28 @@ table.lines tr.selected td { background: var(--tp-selected); box-shadow: inset 4
   .numpad { grid-template-columns: 78px 1fr; }
 }
 
-.grace-banner {
+.grace-banner, .demo-contact {
   flex: none;
-  background: var(--tp-red);
   color: white;
   text-align: center;
   font-size: 22px;
   font-weight: 800;
   padding: 12px 16px;
 }
+.grace-banner { background: var(--tp-red); }
+.demo-contact { background: #8a5a00; }
+.demo-card {
+  display: grid;
+  gap: 4px;
+  width: min(440px, 100%);
+  padding: 14px 16px;
+  border: 2px solid #ffe14a;
+  border-radius: 8px;
+  background: rgba(0, 0, 0, 0.18);
+  text-align: left;
+  font-size: 18px;
+}
+.demo-inline { margin: 0; font-size: 18px; color: #ffe14a; }
 
 .lock-screen {
   flex: 1;

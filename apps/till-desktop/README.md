@@ -21,7 +21,7 @@ The dashboard shop account is the admin (`demo-shop` / `DemoShop-12345`). The ad
 - Enter looks up a PLU or barcode
 - Esc or Delete clears the entry and removes the selected basket line
 - Backspace deletes one digit
-- Type a 1–2 digit quantity, then tap a product
+- Type a price, then tap a category and a product. The product is sold at that price
 - F1 Cash, F2 Card, F3 Customer, F4 Price Check, F5 Reports, F6 Print Last
 - Up and Down move the basket selection
 
