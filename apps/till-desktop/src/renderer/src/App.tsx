@@ -1,4 +1,4 @@
-import { CONTACT_ADDRESS, CONTACT_EMAIL, CONTACT_PHONE, DEMO_CASHIER_ID, DEMO_SHOP_EMAIL, DEMO_SHOP_PASSWORD } from "@tillpro/shared";
+import { CONTACT_ADDRESS, CONTACT_EMAIL, CONTACT_PHONE, DEMO_SHOP_PASSWORD, DEMO_SHOP_USERNAME } from "@tillpro/shared";
 import { useEffect, useState, type FormEvent } from "react";
 import { OnScreenKeyboard } from "./components/OnScreenKeyboard";
 import { TitleBar } from "./components/TitleBar";
@@ -94,11 +94,12 @@ export function App() {
 
   const pastShop = !window.till || shopReady;
   const locked = Boolean(window.till && shopReady && (!gate || !gate.activated || gate.locked));
+  const paymentNotice = banner && !(demoShop && banner.includes("Pay the dues")) ? banner : null;
 
   return (
     <div className="app-frame">
       <TitleBar />
-      {banner ? <div className="grace-banner">{banner}</div> : null}
+      {paymentNotice ? <div className="grace-banner">{paymentNotice}</div> : null}
       {pastShop && !locked && staff && demoShop ? (
         <div className="demo-contact">
           Demo shop. To buy a subscription call {CONTACT_PHONE}, email {CONTACT_EMAIL}, or write to {CONTACT_ADDRESS}.
@@ -107,14 +108,14 @@ export function App() {
       {window.till && !shopReady ? (
         <form className="lock-screen" onSubmit={(event) => void activate(event)}>
           <h1>Sign in</h1>
-          <p>Enter the client email and password. This is asked every time the till opens.</p>
+          <p>Enter the client email or username, and the password. This is asked every time the till opens.</p>
           <div className="demo-card">
             <strong>Demo account, valid for 1 day</strong>
-            <span>Email {DEMO_SHOP_EMAIL}</span>
+            <span>Username {DEMO_SHOP_USERNAME}</span>
             <span>Password {DEMO_SHOP_PASSWORD}</span>
-            <span>Then cashier ID {DEMO_CASHIER_ID} with the same password.</span>
+            <span>On the next screen choose Admin and use this username and password.</span>
           </div>
-          <input data-osk="true" value={username} onChange={(event) => setUsername(event.target.value)} placeholder="Email" autoComplete="username" />
+          <input data-osk="true" value={username} onChange={(event) => setUsername(event.target.value)} placeholder="Email or username" autoComplete="username" />
           <input data-osk="true" type="password" value={password} onChange={(event) => setPassword(event.target.value)} placeholder="Password" autoComplete="current-password" />
           {gate?.lockMessage ? <p className="lock-error">{gate.lockMessage}</p> : null}
           <button type="submit" className="key-btn enter">Sign in</button>

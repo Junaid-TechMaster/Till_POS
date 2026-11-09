@@ -142,14 +142,24 @@ export function evaluateLicence(claims: LicenceClaims | null, clock: OfflineCloc
     };
   }
 
-  if (status === "TRIAL" || status === "ACTIVE") {
-    const end = status === "TRIAL" ? Date.parse(claims.trialEndsAt) : Date.parse(claims.currentPeriodEnd);
-    const remaining = end - clock.nowMs;
+  if (status === "TRIAL") {
+    const remaining = Date.parse(claims.trialEndsAt) - clock.nowMs;
+    return {
+      status,
+      locked: false,
+      label: trialLabel(remaining),
+      banner: null,
+      lockMessage: null,
+    };
+  }
+
+  if (status === "ACTIVE") {
+    const remaining = Date.parse(claims.currentPeriodEnd) - clock.nowMs;
     const banner = remaining > 0 && remaining <= 2 * DAY_MS ? duesBanner(remaining) : null;
     return {
       status,
       locked: false,
-      label: status === "TRIAL" ? trialLabel(remaining) : "Active",
+      label: "Active",
       banner,
       lockMessage: null,
     };

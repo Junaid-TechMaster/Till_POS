@@ -1,7 +1,7 @@
 import { createHash } from "node:crypto";
 import type { FastifyReply, FastifyRequest } from "fastify";
 import { z } from "zod";
-import { formatGbp, PRODUCT_NAME, type LicenceStatus } from "@tillpro/shared";
+import { DEMO_SHOP_PASSWORD, DEMO_SHOP_USERNAME, formatGbp, PRODUCT_NAME, type LicenceStatus } from "@tillpro/shared";
 import { prisma } from "./prisma.js";
 import { hashPassword, verifyPassword } from "./passwords.js";
 import { addDays, readSettings, writeSettings, type ShopLicenceSettings } from "./settings.js";
@@ -100,8 +100,8 @@ function welcome(input: {
     `Password: ${input.password}`,
     `Download: ${input.downloadUrl || "(add the download link in Settings)"}`,
     "",
-    "Each time the till opens, sign in with this email and password, then the cashier ID.",
-    "The shop username also works in place of the email.",
+    "Each time the till opens, sign in with this username or email, and this password.",
+    "Then choose Admin. A cashier ID works only after the admin adds a cashier.",
     "Keep this password private. It works only for this shop and the devices you allow.",
   ].join("\n");
 }
@@ -221,8 +221,10 @@ export async function registerRoutes(app: import("fastify").FastifyInstance): Pr
       prisma.payment.findMany({ where: { clientId: client.id }, orderBy: { paidAt: "desc" } }),
       prisma.auditLog.findMany({ where: { clientId: client.id }, orderBy: { createdAt: "desc" }, take: 50 }),
     ]);
+    const username = client.account?.username.toLowerCase() ?? "";
     return {
       client: clientJson(client),
+      demoPassword: username === DEMO_SHOP_USERNAME ? DEMO_SHOP_PASSWORD : null,
       payments: payments.map((payment) => ({
         id: payment.id,
         amountPence: payment.amountPence,
@@ -367,8 +369,9 @@ export async function registerRoutes(app: import("fastify").FastifyInstance): Pr
     const admin = await adminOf(request, reply);
     if (!admin) return;
     const { id } = request.params as { id: string };
-    const password = (await import("./passwords.js")).randomPassword();
     const client = await prisma.client.findUniqueOrThrow({ where: { id }, include: clientInclude });
+    const demo = client.account?.username.toLowerCase() === DEMO_SHOP_USERNAME;
+    const password = demo ? DEMO_SHOP_PASSWORD : (await import("./passwords.js")).randomPassword();
     await prisma.clientAccount.update({
       where: { clientId: id },
       data: { passwordHash: await hashPassword(password) },

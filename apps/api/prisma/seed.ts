@@ -88,7 +88,11 @@ if (!demoAccount) {
   }
   console.log(`Demo shop username ${demoUsername}`);
 } else {
-  console.log(`Demo shop ${demoUsername} already exists`);
+  await prisma.clientAccount.update({
+    where: { id: demoAccount.id },
+    data: { passwordHash: await hashPassword(demoPassword) },
+  });
+  console.log(`Demo shop ${demoUsername} uses the till sign-in password`);
 }
 
 await prisma.$disconnect();

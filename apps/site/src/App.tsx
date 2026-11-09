@@ -163,7 +163,7 @@ export function App() {
                 <li>The same till, paid once for the year</li>
                 <li>Two months included compared with paying monthly</li>
                 <li>Updates listed on this page and inside the till</li>
-                <li>Older installers stay available to download</li>
+                <li>The five newest installers stay on this page</li>
               </ul>
             </article>
           </div>
@@ -171,9 +171,9 @@ export function App() {
 
         <section id="download">
           <h2>Download the till</h2>
-          <p className="section-intro">Install the latest file, then sign in with the shop email and password. Windows may ask before it runs an installer that is not signed. Choose to run it. An installed till can also open Settings and press Check for updates.</p>
+          <p className="section-intro">The five newest installers are listed here. Install the latest file, then sign in with the shop email or username and password. Windows may ask before it runs an installer that is not signed. Choose to run it. An installed till can also open Settings and press Check for updates.</p>
           <div className="downloads">
-            {(releases?.versions ?? []).map((item) => (
+            {(releases?.versions ?? []).slice(0, 5).map((item) => (
               <article className="release" key={item.version}>
                 <strong>
                   {item.version}

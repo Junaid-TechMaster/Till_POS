@@ -1,7 +1,7 @@
 /** Single source for the product name. Do not hard-code the brand elsewhere. */
 export const PRODUCT_NAME = "TillPro";
 
-export const APP_VERSION = "1.0.7";
+export const APP_VERSION = "1.0.11";
 
 export const DEMO_SHOP_USERNAME = "demo-shop";
 export const DEMO_SHOP_EMAIL = "demo@localhost";

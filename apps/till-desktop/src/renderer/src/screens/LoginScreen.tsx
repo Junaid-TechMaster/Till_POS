@@ -1,11 +1,12 @@
-import { DEMO_CASHIER_ID, DEMO_SHOP_PASSWORD, PRODUCT_NAME } from "@tillpro/shared";
+import { DEMO_SHOP_PASSWORD, DEMO_SHOP_USERNAME, PRODUCT_NAME } from "@tillpro/shared";
 import { useEffect, useState } from "react";
 import { useTillStore } from "../store/useTillStore";
 
 export function LoginScreen() {
   const login = useTillStore((state) => state.login);
   const loginAdmin = useTillStore((state) => state.loginAdmin);
-  const [mode, setMode] = useState<"admin" | "cashier">("cashier");
+  const demoShop = useTillStore((state) => state.demoShop);
+  const [mode, setMode] = useState<"admin" | "cashier">(demoShop ? "admin" : "cashier");
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
   const [stage, setStage] = useState<"id" | "pin">("id");
@@ -75,7 +76,9 @@ export function LoginScreen() {
       <div className="login-copy">
         <h1>{PRODUCT_NAME}</h1>
         <p className="text-xl">Sign in through ID. Enter the cashier ID, then the PIN. Admin is the shop account.</p>
-        <p className="demo-inline">Demo cashier ID {DEMO_CASHIER_ID}. PIN {DEMO_SHOP_PASSWORD}. The demo account is valid for 1 day.</p>
+        {demoShop ? (
+          <p className="demo-inline">Demo account, valid for 1 day. Choose Admin. Username {DEMO_SHOP_USERNAME}. Password {DEMO_SHOP_PASSWORD}.</p>
+        ) : null}
         <div className="flex gap-2">
           <button type="button" className={`tp-btn ${mode === "admin" ? "tone-green" : "tone-teal"}`} onClick={() => { setMode("admin"); setError(""); }}>
             Admin

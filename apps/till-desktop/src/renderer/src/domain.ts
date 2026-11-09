@@ -127,10 +127,23 @@ export function totalsOf(lines: BasketLine[], basketDiscountPct: number, noVat: 
   );
 }
 
+function sameCode(stored: string, scanned: string): boolean {
+  const left = stored.trim();
+  const right = scanned.trim().replace(/^\*+|\*+$/g, "");
+  if (!left || !right) return false;
+  if (left === right) return true;
+  if (/^\d+$/.test(left) && /^\d+$/.test(right)) {
+    const a = left.replace(/^0+/, "");
+    const b = right.replace(/^0+/, "");
+    return a !== "" && a === b;
+  }
+  return false;
+}
+
 export function findProduct(products: ProductRecord[], query: string): ProductRecord | undefined {
-  const needle = query.trim();
+  const needle = query.trim().replace(/^\*+|\*+$/g, "");
   return products.find(
-    (product) => product.active && (product.barcode === needle || product.plu === needle),
+    (product) => product.active && (sameCode(product.barcode, needle) || sameCode(product.plu, needle)),
   );
 }
 

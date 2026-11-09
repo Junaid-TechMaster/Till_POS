@@ -2,7 +2,7 @@ import { copyFileSync, existsSync, mkdirSync } from "node:fs";
 import { dirname, join } from "node:path";
 import Database from "better-sqlite3";
 import { app } from "electron";
-import { localStamp } from "@tillpro/shared";
+import { DEMO_SHOP_EMAIL, DEMO_SHOP_USERNAME, localStamp } from "@tillpro/shared";
 import type { CustomerRecord, ProductRecord, ShopSettings, StaffPublic, VatRate } from "@tillpro/shared";
 import { CATEGORIES, DEFAULT_SETTINGS, PRODUCTS } from "../data/catalog";
 import type { OpenSalePayload, StoredSale } from "../engine/types";
@@ -329,7 +329,9 @@ export function saveSettings(settings: ShopSettings): void {
 
 export function loginAdmin(username: string, password: string): StaffPublic | null {
   const expected = getSetting(getDb(), "admin_username").toLowerCase();
-  if (!expected || username.trim().toLowerCase() !== expected) return null;
+  const typed = username.trim().toLowerCase();
+  const demoEmail = expected === DEMO_SHOP_USERNAME && typed === DEMO_SHOP_EMAIL;
+  if (!expected || (typed !== expected && !demoEmail)) return null;
   const row = getDb().prepare("SELECT id, name, role, pin_hash, pin_salt, active FROM staff WHERE id = '1'").get() as
     | { id: string; name: string; role: StaffPublic["role"]; pin_hash: string; pin_salt: string; active: number }
     | undefined;

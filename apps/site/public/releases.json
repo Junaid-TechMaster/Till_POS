@@ -1,6 +1,13 @@
 {
-  "latest": "1.0.7",
+  "latest": "1.0.8",
   "versions": [
+    {
+      "version": "1.0.8",
+      "released": "2026-11-10",
+      "file": "TillPro-Setup-1.0.8.exe",
+      "url": "https://github.com/Junaid-TechMaster/Till_POS/releases/download/v1.0.8/TillPro-Setup-1.0.8.exe",
+      "notes": "Demo sign-in uses the username demo-shop and the Admin button. The payment reminder appears only on a paid subscription with two days left. Categories and products scroll, and the till fits the window."
+    },
     {
       "version": "1.0.7",
       "released": "2026-11-10",

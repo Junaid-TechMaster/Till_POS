@@ -339,14 +339,22 @@ function CardDialog() {
 }
 
 function ChangeDialog() {
-  const change = useTillStore((state) => state.changePence);
+  const history = useTillStore((state) => state.history);
   const fresh = useTillStore((state) => state.newSale);
+  const sale = history.find((item) => item.kind === "sale");
+  const title = sale?.paymentLabel === "CARD" ? "Card" : sale?.paymentLabel === "CASH" ? "Cash" : "Payment";
   return (
-    <Modal title="Change" onClose={fresh} testId="dialog-change">
-      <div className="change-amount">{formatGbp(change)}</div>
-      <button type="button" className="tp-btn tone-green" onClick={fresh}>
-        New sale
-      </button>
+    <Modal title={title} onClose={fresh} wide testId="dialog-change">
+      {sale?.paymentLabel === "CASH" ? <div className="change-amount" style={{ fontSize: 48 }}>{formatGbp(sale.changePence)}</div> : null}
+      {sale ? <div className="paid-receipt"><ReceiptView sale={sale} /></div> : null}
+      <div className="choice-grid">
+        <button type="button" className="tp-btn tone-teal" disabled={!sale} onClick={() => window.print()}>
+          Print receipt
+        </button>
+        <button type="button" className="tp-btn tone-green" onClick={fresh}>
+          New sale
+        </button>
+      </div>
     </Modal>
   );
 }

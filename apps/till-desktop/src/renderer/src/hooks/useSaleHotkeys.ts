@@ -3,6 +3,9 @@ import { useTillStore } from "../store/useTillStore";
 
 export function useSaleHotkeys() {
   useEffect(() => {
+    let scanMarks: number[] = [];
+    let scanTimer = 0;
+
     const onKey = (event: KeyboardEvent) => {
       const target = event.target;
       const typing =
@@ -21,15 +24,26 @@ export function useSaleHotkeys() {
         return;
       }
 
-      if (/^[0-9]$/.test(event.key)) {
+      if (/^[0-9A-Za-z]$/.test(event.key) || event.key === "-") {
         event.preventDefault();
         state.pressDigit(event.key);
+        const now = Date.now();
+        scanMarks = [...scanMarks.filter((mark) => now - mark < 500), now];
+        window.clearTimeout(scanTimer);
+        scanTimer = window.setTimeout(() => {
+          const current = useTillStore.getState();
+          const fast = scanMarks.length >= 4 && scanMarks.every((mark, index) => index === 0 || mark - scanMarks[index - 1] < 60);
+          scanMarks = [];
+          if (fast && current.buffer.length >= 4 && !current.dialog && !current.saleComplete) current.enter();
+        }, 90);
         return;
       }
 
       const key = event.key;
-      if (key === "Enter") {
+      if (key === "Enter" || key === "NumpadEnter" || (key === "Tab" && state.buffer.length >= 4)) {
         event.preventDefault();
+        window.clearTimeout(scanTimer);
+        scanMarks = [];
         state.enter();
       } else if (key === "Escape" || key === "Delete") {
         event.preventDefault();
@@ -65,6 +79,9 @@ export function useSaleHotkeys() {
     };
 
     window.addEventListener("keydown", onKey);
-    return () => window.removeEventListener("keydown", onKey);
+    return () => {
+      window.clearTimeout(scanTimer);
+      window.removeEventListener("keydown", onKey);
+    };
   }, []);
 }

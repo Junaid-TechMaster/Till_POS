@@ -1,4 +1,4 @@
-import { formatGbp, interpretTenderPence, localStamp } from "@tillpro/shared";
+import { DEMO_SHOP_EMAIL, formatGbp, interpretTenderPence, localStamp } from "@tillpro/shared";
 import type { CustomerRecord, ProductRecord, StaffPublic } from "@tillpro/shared";
 import { create } from "zustand";
 import { CATEGORIES, CUSTOMERS, DEFAULT_SETTINGS, DEMO_ADMIN_USERNAME, DEMO_STAFF, PRODUCTS } from "../../../data/catalog";
@@ -167,7 +167,7 @@ export const useTillStore = create<TillState>((set, get) => ({
 
   pressDigit: (digit) => {
     if (get().dialog || get().saleComplete) return;
-    set({ buffer: `${get().buffer}${digit}`.slice(0, 18) });
+    set({ buffer: `${get().buffer}${digit}`.slice(0, 32) });
   },
   pressDoubleZero: () => {
     if (get().dialog || get().saleComplete) return;
@@ -208,7 +208,8 @@ export const useTillStore = create<TillState>((set, get) => ({
     if (!state.buffer) return;
     const product = findProduct(state.products, state.buffer);
     if (!product) {
-      state.flash("Item not found", "bad");
+      set({ buffer: "" });
+      state.flash("Item not found. Add the barcode in Extras, Products, then scan it again.", "bad");
       return;
     }
     set({ buffer: "" });
@@ -580,7 +581,9 @@ export const useTillStore = create<TillState>((set, get) => ({
       return true;
     }
     const admin = get().accounts.find((person) => person.role === "admin" && person.active);
-    if (!admin || username.trim().toLowerCase() !== DEMO_ADMIN_USERNAME || password !== admin.pin) return false;
+    const typed = username.trim().toLowerCase();
+    const known = typed === DEMO_ADMIN_USERNAME || typed === DEMO_SHOP_EMAIL;
+    if (!admin || !known || password !== admin.pin) return false;
     set({ staff: admin, screen: "sale", dialog: null });
     pushAudit("login", admin.name);
     return true;
