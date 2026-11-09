@@ -1,4 +1,4 @@
-import { formatDateTime, formatGbp, interpretTenderPence, VAT_RATES, type VatRate } from "@tillpro/shared";
+import { formatDateTime, formatGbp, interpretTenderPence, parsePriceToPence, VAT_RATES, type VatRate } from "@tillpro/shared";
 import { useEffect, useState } from "react";
 import { openCatalogue } from "../catalogueNav";
 import { useTillStore } from "../store/useTillStore";
@@ -24,6 +24,7 @@ export function DialogHost() {
   if (dialog.name === "manager") return <ManagerDialog />;
   if (dialog.name === "help") return <HelpDialog />;
   if (dialog.name === "priceOverride") return <PriceOverrideDialog />;
+  if (dialog.name === "dayEnd") return <DayEndDialog />;
   return null;
 }
 
@@ -139,6 +140,8 @@ function ExtrasDialog() {
     { label: "Staff", run: () => setScreen("staff") },
     { label: "Settings", run: () => setScreen("settings") },
     { label: "Cash up", run: () => setScreen("cashup") },
+    { label: "Day end", run: () => open({ name: "dayEnd" }) },
+    { label: "Check for updates", run: () => setScreen("settings") },
     { label: "Keyboard help", run: () => open({ name: "help" }) },
   ];
 
@@ -155,25 +158,102 @@ function ExtrasDialog() {
   );
 }
 
+function DayEndDialog() {
+  const close = useTillStore((state) => state.closeDialog);
+  const flash = useTillStore((state) => state.flash);
+  const staff = useTillStore((state) => state.staff);
+  const [error, setError] = useState("");
+  const [busy, setBusy] = useState(false);
+
+  async function send() {
+    if (!window.till?.dayEnd || !staff) {
+      setError("Sign in on the till to close the day.");
+      return;
+    }
+    setBusy(true);
+    setError("");
+    const result = await window.till.dayEnd(staff.id);
+    setBusy(false);
+    if (!result.ok) {
+      setError(result.error);
+      return;
+    }
+    await useTillStore.getState().reloadHistory();
+    flash(`Day end emailed to ${result.email}. This shift's transactions are cleared.`, "good");
+    close();
+  }
+
+  return (
+    <Modal title="Day end" onClose={close} testId="dialog-day-end">
+      <p>This emails every transaction in the open shift, then clears those transactions and opens the next shift.</p>
+      {error ? <div className="flash flash-bad">{error}</div> : null}
+      <button type="button" className="tp-btn tone-green" disabled={busy} onClick={() => void send()}>
+        {busy ? "Sending…" : "Send day end"}
+      </button>
+    </Modal>
+  );
+}
+
 function ManualDialog() {
   const close = useTillStore((state) => state.closeDialog);
   const addManual = useTillStore((state) => state.addManual);
-  const buffer = useTillStore((state) => state.buffer);
-  const preset = interpretTenderPence(buffer);
-  const [description, setDescription] = useState("Manual item");
-  const [price, setPrice] = useState(preset ? (preset / 100).toFixed(2) : "");
+  const [description, setDescription] = useState("");
+  const [price, setPrice] = useState("");
+  const [qty, setQty] = useState(1);
   const [vat, setVat] = useState<VatRate>(20);
+  const [error, setError] = useState("");
+
+  function typePrice(key: string) {
+    setError("");
+    if (key === "clear") {
+      setPrice("");
+      return;
+    }
+    if (key === "back") {
+      setPrice((value) => value.slice(0, -1));
+      return;
+    }
+    setPrice((value) => {
+      const next = `${value}${key}`;
+      if (!/^\d*\.?\d{0,2}$/.test(next)) return value;
+      return next.slice(0, 8);
+    });
+  }
+
+  function add() {
+    const pence = parsePriceToPence(price);
+    if (!description.trim() || !pence) {
+      setError("Enter the item name and a price, for example 2.50.");
+      return;
+    }
+    addManual(description, pence, vat, qty);
+  }
+
+  const keys = ["1", "2", "3", "4", "5", "6", "7", "8", "9", ".", "0", "back"];
 
   return (
     <Modal title="Manual item" onClose={close}>
+      <p>Type an item that is not in the catalogue. It is added to this basket.</p>
       <label className="field">
-        Description
-        <input data-osk="true" value={description} onChange={(event) => setDescription(event.target.value)} />
+        Item name
+        <input data-osk="true" value={description} onChange={(event) => setDescription(event.target.value)} placeholder="Item name" />
       </label>
-      <label className="field">
-        Price (£)
-        <input inputMode="decimal" value={price} onChange={(event) => setPrice(event.target.value)} />
-      </label>
+      <div className="login-display">
+        <span>Price</span>
+        <span className={price ? undefined : "login-placeholder"}>{price ? `£${price}` : "0.00"}</span>
+      </div>
+      <div className="pin-grid">
+        {keys.map((key) => (
+          <button key={key} type="button" className={`tp-btn ${key === "back" ? "tone-clear" : "tone-blue"}`} onClick={() => typePrice(key)}>
+            {key === "back" ? "⌫" : key}
+          </button>
+        ))}
+      </div>
+      <div className="choice-grid cols-3">
+        <button type="button" className="tp-btn tone-teal" onClick={() => setQty((value) => Math.max(1, value - 1))}>−</button>
+        <span className="tp-btn tone-green">Qty {qty}</span>
+        <button type="button" className="tp-btn tone-teal" onClick={() => setQty((value) => Math.min(99, value + 1))}>+</button>
+      </div>
       <div className="choice-grid cols-3">
         {VAT_RATES.map((rate) => (
           <button key={rate} type="button" className={`tp-btn ${vat === rate ? "tone-green" : "tone-ghost"}`} onClick={() => setVat(rate)}>
@@ -181,11 +261,8 @@ function ManualDialog() {
           </button>
         ))}
       </div>
-      <button
-        type="button"
-        className="tp-btn tone-green"
-        onClick={() => addManual(description, Math.round(Number(price) * 100), vat)}
-      >
+      {error ? <div className="flash flash-bad">{error}</div> : null}
+      <button type="button" className="tp-btn tone-green" onClick={add}>
         Add to basket
       </button>
     </Modal>
@@ -262,14 +339,22 @@ function CardDialog() {
 }
 
 function ChangeDialog() {
-  const change = useTillStore((state) => state.changePence);
+  const history = useTillStore((state) => state.history);
   const fresh = useTillStore((state) => state.newSale);
+  const sale = history.find((item) => item.kind === "sale");
+  const title = sale?.paymentLabel === "CARD" ? "Card" : sale?.paymentLabel === "CASH" ? "Cash" : "Payment";
   return (
-    <Modal title="Change" onClose={fresh} testId="dialog-change">
-      <div className="change-amount">{formatGbp(change)}</div>
-      <button type="button" className="tp-btn tone-green" onClick={fresh}>
-        New sale
-      </button>
+    <Modal title={title} onClose={fresh} wide testId="dialog-change">
+      {sale?.paymentLabel === "CASH" ? <div className="change-amount" style={{ fontSize: 48 }}>{formatGbp(sale.changePence)}</div> : null}
+      {sale ? <div className="paid-receipt"><ReceiptView sale={sale} /></div> : null}
+      <div className="choice-grid">
+        <button type="button" className="tp-btn tone-teal" disabled={!sale} onClick={() => window.print()}>
+          Print receipt
+        </button>
+        <button type="button" className="tp-btn tone-green" onClick={fresh}>
+          New sale
+        </button>
+      </div>
     </Modal>
   );
 }
@@ -420,7 +505,7 @@ function HelpDialog() {
       <ul className="help-list">
         <li>Number keys and the numpad type into the entry row.</li>
         <li>Enter looks up a barcode or PLU. Clear, Esc, or Delete removes the basket items.</li>
-        <li>Backspace deletes the last digit. Type a quantity, then tap a product.</li>
+        <li>Backspace deletes the last digit. Type a price, then tap a category and a product. That product is sold at the price you typed.</li>
         <li>F1 Cash, F2 Card, F3 Customer, F4 Price Check, F5 Reports, F6 Print Last.</li>
         <li>Up and Down move through the basket.</li>
         <li>One or two digits are pounds. Three or more digits are pence. 1050 is £10.50.</li>

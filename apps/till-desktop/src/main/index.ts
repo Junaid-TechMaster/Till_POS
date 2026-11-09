@@ -1,10 +1,10 @@
 import { existsSync } from "node:fs";
-import { app, BrowserWindow, ipcMain } from "electron";
+import { app, BrowserWindow, ipcMain, shell } from "electron";
 import { join } from "node:path";
 import { PRODUCT_NAME } from "@tillpro/shared";
 import { getDb } from "./db";
 import { registerDatabaseIpc } from "./ipc";
-import { activateLicence, licenceState } from "./licence";
+import { activateLicence, checkForUpdate, licenceState } from "./licence";
 
 let mainWindow: BrowserWindow | null = null;
 
@@ -16,8 +16,8 @@ function createWindow(): void {
   mainWindow = new BrowserWindow({
     width: 1280,
     height: 800,
-    minWidth: 1024,
-    minHeight: 768,
+    minWidth: 960,
+    minHeight: 640,
     show: false,
     frame: false,
     backgroundColor: "#121417",
@@ -62,6 +62,11 @@ function registerIpc(): void {
   ipcMain.handle("licence:state", () => licenceState());
   ipcMain.handle("licence:refresh", () => licenceState(true));
   ipcMain.handle("licence:activate", (_event, username: string, password: string) => activateLicence(username, password));
+  ipcMain.handle("app:checkUpdate", () => checkForUpdate());
+  ipcMain.handle("app:openExternal", (_event, url: string) => {
+    if (typeof url !== "string" || !url.startsWith("https://")) return false;
+    return shell.openExternal(url).then(() => true);
+  });
   ipcMain.handle("window:kiosk", (_event, on: boolean) => {
     if (!mainWindow) return false;
     mainWindow.setKiosk(on);

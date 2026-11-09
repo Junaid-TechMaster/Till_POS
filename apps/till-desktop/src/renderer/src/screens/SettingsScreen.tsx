@@ -1,10 +1,45 @@
+import { APP_VERSION } from "@tillpro/shared";
 import { useState } from "react";
 import { useTillStore } from "../store/useTillStore";
+
+function versionNewer(latest: string, current: string): boolean {
+  const left = latest.split(".").map((part) => Number(part) || 0);
+  const right = current.split(".").map((part) => Number(part) || 0);
+  const length = Math.max(left.length, right.length);
+  for (let index = 0; index < length; index += 1) {
+    const a = left[index] ?? 0;
+    const b = right[index] ?? 0;
+    if (a !== b) return a > b;
+  }
+  return false;
+}
 
 export function SettingsScreen() {
   const current = useTillStore((state) => state.settings);
   const save = useTillStore((state) => state.saveSettingsRecord);
   const setScreen = useTillStore((state) => state.setScreen);
+  const [updateMessage, setUpdateMessage] = useState(`This till is version ${APP_VERSION}.`);
+  const [updateUrl, setUpdateUrl] = useState<string | null>(null);
+
+  async function checkUpdate() {
+    if (!window.till?.checkUpdate) {
+      setUpdateMessage("Open the installed TillPro program to check for updates.");
+      return;
+    }
+    const result = await window.till.checkUpdate();
+    if (result.error) {
+      setUpdateMessage(result.error);
+      setUpdateUrl(null);
+      return;
+    }
+    if (versionNewer(result.latest, result.current) && result.url) {
+      setUpdateMessage(`Version ${result.latest} is ready. ${result.notes}`.trim());
+      setUpdateUrl(result.url);
+      return;
+    }
+    setUpdateUrl(null);
+    setUpdateMessage(`This till is up to date (${result.current}).`);
+  }
   const [shopName, setShopName] = useState(current.shopName);
   const [address, setAddress] = useState(current.addressLines.join("\n"));
   const [vatNumber, setVatNumber] = useState(current.vatNumber);
@@ -18,10 +53,21 @@ export function SettingsScreen() {
     <div className="screen-page">
       <header className="page-head">
         <h1 className="text-2xl font-extrabold">Settings</h1>
+        <div className="flex flex-wrap items-center gap-2">
+          <button type="button" className="tp-btn tone-teal" onClick={() => void checkUpdate()}>
+            Check for updates
+          </button>
+          {updateUrl ? (
+            <button type="button" className="tp-btn tone-green" onClick={() => void window.till?.openExternal(updateUrl)}>
+              Download update
+            </button>
+          ) : null}
+        </div>
         <button type="button" className="tp-btn tone-clear" onClick={() => setScreen("sale")}>
           Close
         </button>
       </header>
+      <p className="text-white">{updateMessage}</p>
       <form
         className="grid max-w-3xl grid-cols-2 gap-3 overflow-auto"
         onSubmit={(event) => {

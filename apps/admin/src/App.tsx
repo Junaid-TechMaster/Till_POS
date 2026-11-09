@@ -51,6 +51,7 @@ interface ClientRow {
 
 interface ClientDetail {
   client: ClientRow;
+  demoPassword: string | null;
   payments: { id: string; amountPence: number; method: string; reference: string; paidAt: string; periodEnd: string }[];
   audit: { id: string; action: string; detail: string; createdAt: string }[];
 }
@@ -473,6 +474,14 @@ function ClientPage({ id, onError }: { id: string; onError: (message: string) =>
         </label>
         <button type="submit" className="min-h-12 rounded bg-teal-700 px-4">Save details</button>
       </form>
+      {detail.demoPassword ? (
+        <div className="rounded-xl bg-[#182024] p-4">
+          <h3 className="text-xl">Demo till sign-in</h3>
+          <p>Username {client.username}</p>
+          <p className="text-2xl tracking-wide">{detail.demoPassword}</p>
+          <p>This is the password printed on the till sign-in screen. Reset password puts this same password back.</p>
+        </div>
+      ) : null}
       <div className="flex flex-wrap gap-2">
         <button type="button" className="min-h-12 rounded bg-red-700 px-4" onClick={() => void action(`/admin/clients/${client.id}/suspend`)}>Suspend</button>
         <button type="button" className="min-h-12 rounded bg-emerald-700 px-4" onClick={() => void action(`/admin/clients/${client.id}/reactivate`)}>Reactivate</button>

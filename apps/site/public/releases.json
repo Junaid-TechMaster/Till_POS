@@ -1,0 +1,61 @@
+{
+  "latest": "1.0.11",
+  "versions": [
+    {
+      "version": "1.0.11",
+      "released": "2026-11-10",
+      "file": "TillPro-Setup-1.0.11.exe",
+      "url": "https://github.com/Junaid-TechMaster/Till_POS/releases/download/v1.0.11/TillPro-Setup-1.0.11.exe",
+      "notes": "Print the receipt after payment, or start a new sale. Scan a barcode to add that product to the sale."
+    },
+    {
+      "version": "1.0.10",
+      "released": "2026-11-10",
+      "file": "TillPro-Setup-1.0.10.exe",
+      "url": "https://github.com/Junaid-TechMaster/Till_POS/releases/download/v1.0.10/TillPro-Setup-1.0.10.exe",
+      "notes": "The keypad stays above Cash and Card on a small window, and the receipt is shown after payment."
+    },
+    {
+      "version": "1.0.9",
+      "released": "2026-11-10",
+      "file": "TillPro-Setup-1.0.9.exe",
+      "url": "https://github.com/Junaid-TechMaster/Till_POS/releases/download/v1.0.9/TillPro-Setup-1.0.9.exe",
+      "notes": "The sign-in screen scrolls while the on-screen keyboard is open, so the fields stay visible."
+    },
+    {
+      "version": "1.0.8",
+      "released": "2026-11-10",
+      "file": "TillPro-Setup-1.0.8.exe",
+      "url": "https://github.com/Junaid-TechMaster/Till_POS/releases/download/v1.0.8/TillPro-Setup-1.0.8.exe",
+      "notes": "Demo sign-in uses the username demo-shop and the Admin button. The payment reminder appears only on a paid subscription with two days left. Categories and products scroll, and the till fits the window."
+    },
+    {
+      "version": "1.0.7",
+      "released": "2026-11-10",
+      "file": "TillPro-Setup-1.0.7.exe",
+      "url": "https://github.com/Junaid-TechMaster/Till_POS/releases/download/v1.0.7/TillPro-Setup-1.0.7.exe",
+      "notes": "Demo sign-in on the login screen, sample products, a contact line, a Z report that clears the shift, and a payment reminder when two days remain."
+    },
+    {
+      "version": "1.0.6",
+      "released": "2026-11-10",
+      "file": "TillPro-Setup-1.0.6.exe",
+      "url": "https://github.com/Junaid-TechMaster/Till_POS/releases/download/v1.0.6/TillPro-Setup-1.0.6.exe",
+      "notes": "Type a price on the keypad, then tap a category and a product. The product is sold at that price."
+    },
+    {
+      "version": "1.0.5",
+      "released": "2026-11-07",
+      "file": "TillPro-Setup-1.0.5.exe",
+      "url": "https://github.com/Junaid-TechMaster/Till_POS/releases/download/v1.0.5/TillPro-Setup-1.0.5.exe",
+      "notes": "Check for updates from Settings. Day end, a separate till for each shop, and manual items."
+    },
+    {
+      "version": "1.0.4",
+      "released": "2026-11-07",
+      "file": "TillPro-Setup-1.0.4.exe",
+      "url": "https://github.com/Junaid-TechMaster/Till_POS/releases/download/v1.0.4/TillPro-Setup-1.0.4.exe",
+      "notes": "First public installer. Each shop has its own blank till, and the admin can reset a forgotten cashier PIN."
+    }
+  ]
+}

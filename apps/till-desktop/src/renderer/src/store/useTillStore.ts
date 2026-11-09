@@ -1,4 +1,4 @@
-import { formatGbp, interpretTenderPence, localStamp } from "@tillpro/shared";
+import { DEMO_SHOP_EMAIL, formatGbp, interpretTenderPence, localStamp } from "@tillpro/shared";
 import type { CustomerRecord, ProductRecord, StaffPublic } from "@tillpro/shared";
 import { create } from "zustand";
 import { CATEGORIES, CUSTOMERS, DEFAULT_SETTINGS, DEMO_ADMIN_USERNAME, DEMO_STAFF, PRODUCTS } from "../../../data/catalog";
@@ -48,6 +48,8 @@ interface TillState {
   kiosk: boolean;
   licenceLabel: string;
   licenceBanner: string | null;
+  demoShop: boolean;
+  reloadHistory: () => Promise<void>;
   pressDigit: (digit: string) => void;
   pressDoubleZero: () => void;
   backspace: () => void;
@@ -72,7 +74,7 @@ interface TillState {
   closeDialog: () => void;
   attachCustomer: (customer: CustomerRecord | null) => void;
   saveCustomer: (customer: CustomerRecord) => void;
-  addManual: (description: string, pricePence: number, vatRate: 0 | 5 | 20) => void;
+  addManual: (description: string, pricePence: number, vatRate: 0 | 5 | 20, qty?: number) => void;
   applyLineDiscount: (pct: number) => void;
   applyBasketDiscount: (pct: number) => void;
   requestVoidLine: () => void;
@@ -148,6 +150,12 @@ export const useTillStore = create<TillState>((set, get) => ({
   kiosk: false,
   licenceLabel: "",
   licenceBanner: null,
+  demoShop: typeof window === "undefined" || !window.till,
+  reloadHistory: async () => {
+    if (!window.till?.bootstrap) return;
+    const data = await window.till.bootstrap();
+    set({ history: data.history as CompletedSale[], demoShop: data.demo });
+  },
 
   flash: (text, tone = "info") => {
     const token = Date.now();
@@ -159,7 +167,7 @@ export const useTillStore = create<TillState>((set, get) => ({
 
   pressDigit: (digit) => {
     if (get().dialog || get().saleComplete) return;
-    set({ buffer: `${get().buffer}${digit}`.slice(0, 18) });
+    set({ buffer: `${get().buffer}${digit}`.slice(0, 32) });
   },
   pressDoubleZero: () => {
     if (get().dialog || get().saleComplete) return;
@@ -200,7 +208,8 @@ export const useTillStore = create<TillState>((set, get) => ({
     if (!state.buffer) return;
     const product = findProduct(state.products, state.buffer);
     if (!product) {
-      state.flash("Item not found", "bad");
+      set({ buffer: "" });
+      state.flash("Item not found. Add the barcode in Extras, Products, then scan it again.", "bad");
       return;
     }
     set({ buffer: "" });
@@ -252,20 +261,17 @@ export const useTillStore = create<TillState>((set, get) => ({
   addProduct: (productId) => {
     const state = get();
     if (state.dialog) return;
+    const typed = interpretTenderPence(state.buffer);
+    const unitPricePence = typed !== null && typed > 0 ? typed : undefined;
     if (state.saleComplete) state.newSale();
+    else if (unitPricePence !== undefined) set({ buffer: "" });
     const product = get().products.find((item) => item.id === productId && item.active);
     if (!product) return;
-    let qty = 1;
-    const buffer = get().buffer;
-    if (/^\d{1,2}$/.test(buffer) && Number(buffer) >= 1) {
-      qty = Number(buffer);
-      set({ buffer: "" });
-    }
     if (product.ageRestricted) {
-      set({ dialog: { name: "age", productId, qty } });
+      set({ dialog: { name: "age", productId, qty: 1, unitPricePence } });
       return;
     }
-    commitProduct(product, qty);
+    commitProduct(product, 1, unitPricePence);
   },
 
   confirmAge: (yes) => {
@@ -279,7 +285,7 @@ export const useTillStore = create<TillState>((set, get) => ({
     const product = get().products.find((item) => item.id === dialog.productId);
     if (!product) return;
     pushAudit("age_check", `${product.name} confirmed`);
-    commitProduct(product, dialog.qty);
+    commitProduct(product, dialog.qty, dialog.unitPricePence);
   },
 
   toggleNoVat: () => {
@@ -351,8 +357,8 @@ export const useTillStore = create<TillState>((set, get) => ({
     });
   },
 
-  addManual: (description, pricePence, vatRate) => {
-    if (!description.trim() || pricePence <= 0) {
+  addManual: (description, pricePence, vatRate, qty = 1) => {
+    if (!description.trim() || pricePence <= 0 || qty < 1) {
       get().flash("Enter a description and a price", "bad");
       return;
     }
@@ -360,7 +366,7 @@ export const useTillStore = create<TillState>((set, get) => ({
       id: nextLineId(),
       productId: null,
       description: description.trim(),
-      qty: 1,
+      qty,
       unitPricePence: pricePence,
       discountPct: 0,
       vatRate,
@@ -575,7 +581,9 @@ export const useTillStore = create<TillState>((set, get) => ({
       return true;
     }
     const admin = get().accounts.find((person) => person.role === "admin" && person.active);
-    if (!admin || username.trim().toLowerCase() !== DEMO_ADMIN_USERNAME || password !== admin.pin) return false;
+    const typed = username.trim().toLowerCase();
+    const known = typed === DEMO_ADMIN_USERNAME || typed === DEMO_SHOP_EMAIL;
+    if (!admin || !known || password !== admin.pin) return false;
     set({ staff: admin, screen: "sale", dialog: null });
     pushAudit("login", admin.name);
     return true;
@@ -638,6 +646,7 @@ export const useTillStore = create<TillState>((set, get) => ({
       customers: data.customers,
       settings: data.settings,
       history: data.history as CompletedSale[],
+      demoShop: data.demo,
       held: data.held.map((item) => item.payload as HeldSale),
       nextSlip: data.nextSlip,
       ...priced,
@@ -648,6 +657,9 @@ export const useTillStore = create<TillState>((set, get) => ({
       paidPence: open?.paidPence ?? 0,
       buffer: open?.buffer ?? "",
       selectedLineId: open?.selectedLineId ?? null,
+      categoryId: null,
+      screen: "sale",
+      dialog: null,
       staff: null,
     });
   },
@@ -743,10 +755,11 @@ function pushAudit(action: string, detail: string) {
   useTillStore.setState({ audit: [entry, ...useTillStore.getState().audit] });
 }
 
-function commitProduct(product: ProductRecord, qty: number) {
+function commitProduct(product: ProductRecord, qty: number, unitPricePence?: number) {
   const state = useTillStore.getState();
+  const price = unitPricePence && unitPricePence > 0 ? unitPricePence : product.pricePence;
   const existing = state.lines.find(
-    (line) => line.productId === product.id && line.discountPct === 0 && line.unitPricePence === product.pricePence,
+    (line) => line.productId === product.id && line.discountPct === 0 && line.unitPricePence === price,
   );
   let lines: BasketLine[];
   let selected = existing?.id ?? "";
@@ -759,7 +772,7 @@ function commitProduct(product: ProductRecord, qty: number) {
       productId: product.id,
       description: product.name,
       qty,
-      unitPricePence: product.pricePence,
+      unitPricePence: price,
       discountPct: 0,
       vatRate: product.vatRate,
       costPence: product.costPence,

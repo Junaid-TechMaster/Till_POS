@@ -4,7 +4,7 @@ import rateLimit from "@fastify/rate-limit";
 import Fastify from "fastify";
 import { env } from "./env.js";
 import { registerRoutes } from "./http.js";
-import { refreshStatuses } from "./licensing.js";
+import { ensureDemoPassword, refreshStatuses } from "./licensing.js";
 
 export async function createApp() {
   const app = Fastify({ logger: true, trustProxy: true });
@@ -24,6 +24,7 @@ export async function createApp() {
   });
 
   await registerRoutes(app);
+  await ensureDemoPassword();
   await refreshStatuses();
   return app;
 }

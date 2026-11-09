@@ -215,7 +215,12 @@ export function ProductsScreen() {
                 <div className="grid grid-cols-2 gap-2">
                   <label className="field">
                     Barcode
-                    <input value={draft.barcode} onChange={(event) => setDraft({ ...draft, barcode: event.target.value })} />
+                    <input
+                      autoFocus
+                      value={draft.barcode}
+                      onChange={(event) => setDraft({ ...draft, barcode: event.target.value })}
+                      placeholder="Scan or type the barcode"
+                    />
                   </label>
                   <label className="field">
                     PLU

@@ -1,7 +1,7 @@
-import { advanceSubscription, type LicenceStatus } from "@tillpro/shared";
+import { advanceSubscription, DEMO_SHOP_PASSWORD, DEMO_SHOP_USERNAME, type LicenceStatus } from "@tillpro/shared";
 import type { Client, Device, Subscription } from "@prisma/client";
 import { prisma } from "./prisma.js";
-import { hashPassword, randomPassword, randomUsername } from "./passwords.js";
+import { hashPassword, randomPassword, randomUsername, verifyPassword } from "./passwords.js";
 import { addDays, addMonths, readSettings } from "./settings.js";
 import { signLicence } from "./tokens.js";
 
@@ -65,10 +65,27 @@ async function nextClientCode(): Promise<string> {
   return `TP-${String(issued).padStart(6, "0")}`;
 }
 
+/** The downloaded till prints this password, so the dashboard demo must keep it. */
+export async function ensureDemoPassword(): Promise<void> {
+  try {
+    const account = await prisma.clientAccount.findFirst({
+      where: { username: { equals: DEMO_SHOP_USERNAME, mode: "insensitive" } },
+    });
+    if (!account) return;
+    if (await verifyPassword(account.passwordHash, DEMO_SHOP_PASSWORD)) return;
+    await prisma.clientAccount.update({
+      where: { id: account.id },
+      data: { passwordHash: await hashPassword(DEMO_SHOP_PASSWORD) },
+    });
+  } catch {
+    console.error("The demo password could not be checked.");
+  }
+}
+
 export async function accountsForLogin(login: string) {
   const name = login.trim();
-  const exact = await prisma.clientAccount.findUnique({
-    where: { username: name },
+  const exact = await prisma.clientAccount.findFirst({
+    where: { username: { equals: name, mode: "insensitive" } },
     include: { client: { include: clientInclude } },
   });
   const byEmail = name.includes("@")

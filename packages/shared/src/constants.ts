@@ -1,7 +1,15 @@
 /** Single source for the product name. Do not hard-code the brand elsewhere. */
 export const PRODUCT_NAME = "TillPro";
 
-export const APP_VERSION = "1.0.1";
+export const APP_VERSION = "1.0.11";
+
+export const DEMO_SHOP_USERNAME = "demo-shop";
+export const DEMO_SHOP_EMAIL = "demo@localhost";
+export const DEMO_SHOP_PASSWORD = "DemoShop-12345";
+export const DEMO_CASHIER_ID = "1";
+export const CONTACT_PHONE = "0800 123 4567";
+export const CONTACT_EMAIL = "hello@tillpro.example";
+export const CONTACT_ADDRESS = "12 Market Street, Manchester, M1 1AE";
 
 export const CURRENCY = "GBP" as const;
 

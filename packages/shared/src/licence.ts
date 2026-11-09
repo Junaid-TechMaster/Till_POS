@@ -54,6 +54,12 @@ export function graceBanner(remainingMs: number): string {
   return `Payment overdue. Software will lock in ${formatCountdown(remainingMs)}. Contact your provider.`;
 }
 
+export function duesBanner(remainingMs: number): string {
+  const days = Math.max(1, Math.ceil(remainingMs / DAY_MS));
+  const dayWord = days === 1 ? "1 day" : `${days} days`;
+  return `${dayWord} left. Pay the dues to keep using this till.`;
+}
+
 export function trialLabel(remainingMs: number): string {
   if (remainingMs >= DAY_MS) {
     const days = Math.ceil(remainingMs / DAY_MS);
@@ -137,14 +143,27 @@ export function evaluateLicence(claims: LicenceClaims | null, clock: OfflineCloc
   }
 
   if (status === "TRIAL") {
+    const remaining = Date.parse(claims.trialEndsAt) - clock.nowMs;
     return {
       status,
       locked: false,
-      label: trialLabel(Date.parse(claims.trialEndsAt) - clock.nowMs),
+      label: trialLabel(remaining),
       banner: null,
       lockMessage: null,
     };
   }
 
-  return { status: "ACTIVE", locked: false, label: "Active", banner: null, lockMessage: null };
+  if (status === "ACTIVE") {
+    const remaining = Date.parse(claims.currentPeriodEnd) - clock.nowMs;
+    const banner = remaining > 0 && remaining <= 2 * DAY_MS ? duesBanner(remaining) : null;
+    return {
+      status,
+      locked: false,
+      label: "Active",
+      banner,
+      lockMessage: null,
+    };
+  }
+
+  return { status, locked: false, label: "Active", banner: null, lockMessage: null };
 }
